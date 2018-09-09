@@ -7,8 +7,6 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 - I also suspect that bnns are more useful for regression than classification. In the latter case, MLE/MPE already gives a probability for each class output, thus a bnn is just giving a 'probability distribution of probabilities', which in isolation isn't very satisfying (though the statistics one can calculate from these distributions are still interesting). On the other hand in regression, having a probability distribution over some output variable will almost always be useful
 
-- might be best to use tensorflow to build forward propagation computation graph, have this output the cost, and feed this into polychord (or pass function which runs forward computation to polychord, will likely need a wrapper to calculate likelihood value from cost). Can first try this idea using python tf, then if it works, go over to c++ tf for efficiency.
-
 - will probably need to ignore all explicit regularisation techniques (i.e l^n norm regularisation) as polychord handles prior separately from likelihood/cost function. OR could handle prior in cost function using regularisation, then assign uniform priors in polychord.
 
 - need to look at how tf is parallelised in both python and c++
@@ -16,3 +14,5 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 - need to think how batches will be handled with polychord (opposed to passing all data at once)
 
 - need to think how to pass weights sampled from polychord to tf to evaluate forward prop. Should be simple enough with placeholders and feed methodology
+
+- one idea is to use tf/keras optimisation a little bit to get a good 'initial guess' of the network parameters. pass these to polychord and it can use these as the initial livepoints. subsequent samples will be at likelihoods higher than the initial set, and so should be able to concentrate on sampling the peak of the posterior. avoids wasting time sampling 'unreasonable' network parameters. problem with this is the initial livepoints aren't sampled according to the prior, unless we implement the prior (regularise) in the maximum likelihood exploration (then can include prior in ll func to pc with uniform priors or treat priors separately, probably).
