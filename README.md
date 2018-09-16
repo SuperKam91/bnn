@@ -6,8 +6,10 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 - Best David Mackay Paper on BNNS
 https://www.tandfonline.com/doi/abs/10.1088/0954-898X_6_3_011
 
-- novatech
-https://www.novatech.co.uk/laptop/?f=6,17,36,
+- talks on bnns from last icml (2018):
+https://icml.cc/Conferences/2018/Schedule?showParentSession=3377,
+https://icml.cc/Conferences/2018/Schedule?showParentSession=3437, 
+https://icml.cc/Conferences/2018/Schedule?showParentSession=3447
 
 - look into applications of bnns to deep reinforcement learning- believe they are useful as in rl aren't always looking for optimal value function approximation, having stochastic output helps with exploration of algorithm
 
