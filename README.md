@@ -1,5 +1,9 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
+# timeline
+- Implement vanilla nn forward propagator in C++: 2-3 weeks
+- Look into bayes nn application to more complicated problems where MLE performs poorly. Eg deep reinforcement learning  
+- Look into tradeoff of using tensorflow with gpu support vs c++ implemented nns (incorporating parallelisation)
 # thoughts scratchpad
 - Theses which focus on bnns and their applications, to draw inspiration from: http://mlg.eng.cam.ac.uk/yarin/blog_2248.html#thesis and http://www.inference.org.uk/mackay/PhD.html
 
