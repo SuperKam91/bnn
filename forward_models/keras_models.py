@@ -1,3 +1,4 @@
+#########commercial modules
 import tensorflow as tf
 mnist = tf.keras.datasets.mnist
 Model = tf.keras.models.Model
