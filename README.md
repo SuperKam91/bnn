@@ -72,5 +72,3 @@ Link to exporting graphs and running in C++:
 https://medium.com/@hamedmp/exporting-trained-tensorflow-models-to-c-the-right-way-cf24b609d183
 Link to creating graph and running in C++:
 https://matrices.io/training-a-deep-neural-network-using-only-tensorflow-c/
-
-http://bayesiandeeplearning.org/2016/slides/nips16bayesdeep.pdf
