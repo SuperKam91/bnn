@@ -69,9 +69,3 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 - need to think how batches will be handled with polychord (opposed to passing all data at once)
 
 - one idea is to use tf/keras optimisation a little bit to get a good 'initial guess' of the network parameters. pass these to polychord and it can use these as the initial livepoints. note however these initial livepoints would have to be independent. subsequent samples will be at likelihoods higher than the initial set, and so should be able to concentrate on sampling the peak of the posterior. avoids wasting time sampling 'unreasonable' network parameters. another problem with this is the initial livepoints aren't sampled according to the prior, unless we implement the prior (regularise) in the optimisation exploration (then can include prior in ll func to pc with uniform priors or treat priors separately as normal)
-
-- can build own nn model in c++ to use with polychord interface, or with either a tf graph built in python and exported to C++, or a graph created in C++. there are reports that creating a graph in python the exporting to C++ makes running the graph slow. there are some reports that say this only occurs for the first few runs of the graph, while others say it is consistent. there are also claims that it depends on the network architecture. I guess the only way to know for sure is to compare run times of the python polychord interface using python graphs, exporting graphs to C++, and creating the graphs in C++.
-Link to exporting graphs and running in C++:
-https://medium.com/@hamedmp/exporting-trained-tensorflow-models-to-c-the-right-way-cf24b609d183
-Link to creating graph and running in C++:
-https://matrices.io/training-a-deep-neural-network-using-only-tensorflow-c/
