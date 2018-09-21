@@ -46,12 +46,7 @@ class keras_model():
         normalisation constant won't be correct.
         as above, only supports scalar variance.
         """
-        sq_diff = (self.model.predict(x) - y) ** 2.
-        chi_sq = -1. / (2. * LL_var) * tf.reduce_sum(sq_diff)
-        return self.LL_const + chi_sq 
-        #return - self.LL_dim / (2. * LL_var) * self.model.evaluate(x, y) + self.LL_const 
-
-
+        return - self.LL_dim / (2. * LL_var) * self.model.evaluate(x, y) + self.LL_const 
 
     def calc_cross_ent_LL(self, x, y):
     	"""

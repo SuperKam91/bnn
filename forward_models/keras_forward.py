@@ -56,7 +56,7 @@ class keras_model():
 		n.b. requires true y values to be categorical (one-hot) vectors
 		including variance in this llikelihood doesn't make sense?
     	"""
-    	return - self.m * self.model.evaluate(x, y)
+    	return - self.m * self.model.evaluate(x, y, batch_size = self.batch_size)
         
     def setup_LL(self, LL_var = 1.):
         """
@@ -170,8 +170,6 @@ class keras_model():
         """
         self.set_k_weights(oned_weights)
         x_batch, y_batch = self.get_batch()
-        print self.model.predict(x_batch)
-
         LL = self.LL(x_batch, y_batch)
         return LL
         
@@ -249,73 +247,7 @@ def main():
 	y_tr = np.array([1,0,0,1,1,0]).reshape(3,2)
 	km = keras_model(model, x_tr, y_tr, batch_size) 
 	km.setup_LL()
-	print km(np.arange(27))
-	
-	print 'tf'
-	w1p = tf.placeholder(dtype=tf.float64, shape=[num_inputs, 5]) #for FC layer, shape is num inputs to layer, num outputs from layer 
-	b1p = tf.placeholder(dtype=tf.float64, shape=[5]) #shape is num outputs from layer
-	w2p = tf.placeholder(dtype=tf.float64, shape=[5, num_outputs])
-	b2p = tf.placeholder(dtype=tf.float64, shape=[num_outputs])
-	weights = (w1p, b1p, w2p, b2p)
-	w = np.arange(27)
-	w1 = w[:num_inputs*5].reshape(num_inputs, 5)
-	b1 = w[num_inputs*5: num_inputs*5 + 5]
-	w2 = w[num_inputs*5 + 5: num_inputs*5 + 5 + num_outputs*5].reshape(5, num_outputs)
-	b2 = w[num_inputs*5 + 5 + num_outputs*5:]
-	ws = [w1, b1, w2, b2]
-	x = tf.placeholder(dtype=tf.float64, shape=[m, num_inputs])
-	y = tf.placeholder(dtype=tf.float64, shape=[m, num_outputs])
-	pred = slp_graph(x, weights)
-	fit_metric = 'chisq'
-	LL_dim = m * num_outputs
-	LL_const, LL = setup_LL(fit_metric, calc_gauss_LL, calc_cross_ent_LL, LL_dim)
-	like = LL(pred, y, LL_const, m)
-	print tf.Session().run([like], feed_dict={x:x_tr, y:y_tr, weights: ws})
-
-
-def slp_graph(a0, weights):
-    """
-    tf graph builder for single layer perceptron classification nn
-    """
-    a1 = tf.nn.relu(tf.matmul(a0, weights[0]) + weights[1])
-    prediction = tf.matmul(a1, weights[2]) + weights[3]
-    return prediction
-
-def setup_LL(fit_metric, gauss_LL, crossentropy_LL, LL_dim,  LL_var = 1.):
-    """
-    also only currently supports constant variance, but easily upgradable
-    """
-    if fit_metric == 'chisq':
-        #temporary
-        LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(LL_var))
-        LL = gauss_LL
-        #longer term solution (see comments above)
-        #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
-    elif fit_metric == 'categorical_crossentropy':
-        LL_const = 0.
-        LL = crossentropy_LL
-    else:
-        raise NotImplementedError
-    return LL_const, LL
-
-def calc_gauss_LL(pred, y, LL_const, LL_var = 1.):
-    """
-    currently only supports constant variance, but can easily be upgraded
-    if necessary
-    """
-    sq_diff = tf.pow(tf.subtract(pred, y), 2)
-    chi_sq = -1. / (2. * LL_var) * tf.reduce_sum(sq_diff)
-    return tf.add(LL_const, chi_sq) 
-
-def calc_cross_ent_LL(pred, y, LL_const, m):
-    """
-    calc cross entropy and flip sign to get llhood
-    n.b. tf.losses.softmax_cross_entropy first applies softmax to pred before calculating
-    cross entropy, then takes average over m.
-    pred should be of shape (m, num_classes), y should be of shape (m, num_classes) where each of the m elements
-    should be a one-hot vector (as is case with keras)
-    """
-    return -m * tf.losses.softmax_cross_entropy(y, pred)
+	km(np.arange(27))
 
 if __name__ == '__main__':
 	main()

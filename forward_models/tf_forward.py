@@ -15,7 +15,7 @@ class tf_model():
 		self.batch_size = batch_size
 		self.num_complete_batches = int(np.floor(float(self.m)/self.batch_size))
 		self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
-		if type(layer_sizes) == 'list':
+		if type(layer_sizes[0]) == 'list' or type(layer_sizes[0]) == 'tuple':
 			self.weight_shapes = layer_sizes #todo implement get_weight_shapes() to work for conv nets
 		else:
 			self.get_weight_shapes(layer_sizes) 
@@ -60,14 +60,17 @@ class tf_model():
 		    self.LL = self.calc_cross_ent_LL()
 		else:
 		    raise NotImplementedError
+
 	def calc_gauss_LL(self, LL_var = 1.):
 	    """
 	    currently only supports constant variance, but can easily be upgraded
-	    if necessary
+	    if necessary.
+	    not using explicit tf functions seems to speed up process
 	    """
-	    sq_diff = tf.pow(tf.subtract(self.pred, self.y_ph), 2)
+	    diff = self.pred - self.y_ph
+	    sq_diff = diff * diff
 	    chi_sq = -1. / (2. * LL_var) * tf.reduce_sum(sq_diff)
-	    return tf.add(self.LL_const, chi_sq) 
+	    return self.LL_const + chi_sq 
 
 	def calc_cross_ent_LL(self):
 	    """
@@ -162,12 +165,12 @@ def main():
 	x_tr = np.random.random((m, num_inputs))
 	y_tr = np.array([1,0,0,1,1,0]).reshape(3,2)
 	tf_graph = tfgs.slp_graph
-	layer_sizes = [5]
+	layer_sizes = [a1_size]
 	tfm = tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes)
 	w = np.arange(27)
 	fit_metric = 'chisq'
 	tfm.setup_LL(fit_metric)
-	print tfm(w)
+	tfm(w)
 
 if __name__ == '__main__':
 	main()
