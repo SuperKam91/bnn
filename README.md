@@ -12,8 +12,11 @@ https://arxiv.org/abs/1809.04598
 
 - Theses which focus on bnns and their applications, to draw inspiration from: http://mlg.eng.cam.ac.uk/yarin/blog_2248.html#thesis (Gal, 2016), http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.446.9306&rep=rep1&type=pdf (Neal, 1995), http://www.inference.org.uk/mackay/PhD.html (Mackay, 1991) 
 
-- bnn workshop @ nips:
+- bnn workshop @ nips. Contains extended abstracts and videos to some of workshops:
 http://bayesiandeeplearning.org/
+
+- nips general pages. Can find more talks (not in workshops) here:
+https://nips.cc/Conferences/2018
 
 - some general bnn papers:
 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.29.274&rep=rep1&type=pdf (1992),
