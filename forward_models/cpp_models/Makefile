@@ -34,9 +34,10 @@ scratch_objs = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.o))
 scratch_deps = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.d)))
 
 # Extra flags
-inc += -isystem$(external_dir) -I$(include_dir)
+inc += -isystem$(external_dir) -I$(include_dir) -I/home/will/Software/PolyChord/src/polychord/
 LDSHARED = $(LD) -shared
-LDLIBS +=  -l$(libname)
+LDLIBS +=  -l$(libname) -L/home/will/Software/PolyChord/lib/ -lchord
+LDFLAGS += -L/home/will/Software/PolyChord/lib/ -lchord 
 
 all: main
 extra: tags doc
@@ -59,7 +60,7 @@ python $(libdir)/$(libname).so:
 # Compiling the main program
 $(binary_dir)/main: $(build_dir)/main.o $(objs)
 	@mkdir -p $(@D)
-	$(LD) $^ -o $@ $(LDFLAGS)
+	$(LD) $^ -o $@ $(LDFLAGS) 
 
 # Compiling the test_main program
 $(binary_dir)/test: $(build_dir)/test_main.o $(objs) $(test_objs)
