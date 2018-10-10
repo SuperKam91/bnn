@@ -35,15 +35,12 @@ private:
     std::vector<double> y_tr_v;
     Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > y_tr_m;
     // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_m;
-    //can't make these five constant, without assigning their values here
-    //---------------------------------------------------------------------------------------------------------------- 
-    std::string LL_type; 
+    std::string LL_type; //can't make this const as it isn't set to a useful value in constructor
     double LL_var;
-    double LL_norm; 
-    uint num_complete_batches;
-    uint num_batches;
+    double LL_norm; //ditto
+    const uint num_complete_batches;
+    const uint num_batches;
     uint b_c;
-    //----------------------------------------------------------------------------------------------------------------
     Eigen::Matrix<uint, Eigen::Dynamic, 1> rand_m_ind;
     //member methods
     std::vector<uint> get_weight_shapes();

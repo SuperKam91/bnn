@@ -17,6 +17,7 @@ double relu(double x) {
     }
 }
 
+//functor for testing unary_expr method in eigen
 double relu_c::operator()(double x) { 
     if (x > 0.) {
         return x;
@@ -26,11 +27,13 @@ double relu_c::operator()(double x) {
     }        
 }
 
+//should be inlined
 double const_pi() { 
     return std::atan(1)*4; 
 }
 
 forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_) : 
+    //it seems that even if initialiser isn't included implicitly, it is called implicitly, and default constructor for each object is called
     num_inputs(num_inputs_), 
     num_outputs(num_outputs_), 
     m(m_), 
@@ -50,13 +53,10 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     num_batches(static_cast<uint>(ceil(static_cast<double>(m) / batch_size))), 
     b_c(1.), 
     rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)) {
+    //graveyard from endless debugging of eigen map seg fault
     //x_tr_m << 0,1,2,3,4,5,6,7,8,9,10,11;
     //y_tr_m << 13,36,71,118,177,248,331,426,533,652,783,926;
     // x_tr_m(x_tr_v.data(), m, num_inputs), y_tr_m(y_tr_v.data(), m, num_outputs)
-    //get_tr_vec(num_inputs, x_path)
-    //get_tr_vec(num_outputs, y_path)
-    // LL_var = 1.; //as with python implementations, in future can take LL_var as arg in constructor or ll setup
-    // x_tr_v = get_tr_vec(num_inputs, x_path);
     //note this is "placement new", not "normal" new
     // new (&x_tr_m) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(x_tr_v.data(), m, num_inputs); 
     // y_tr_v = get_tr_vec(num_outputs, y_path);
@@ -80,7 +80,7 @@ std::vector<double> forward_prop::file_2_vec(const std::string & path, const uin
     indata.open(path);
     std::string line;
     std::vector<double> values;
-    values.reserve(num_data); //saves having to reallocate many, many times...
+    values.reserve(num_data); 
     while (std::getline(indata, line)) {
         std::stringstream lineStream(line);
         std::string cell;
@@ -91,14 +91,14 @@ std::vector<double> forward_prop::file_2_vec(const std::string & path, const uin
     return values;
 }
 
-std::vector<uint> forward_prop::get_weight_shapes() {
+std::vector<uint> forward_prop::get_weight_shapes() { //return is stored at location of vector which calls function in its initialisation
     std::vector<uint> weight_s;
-    weight_s.reserve((layer_sizes.size() + 1) * 2); //+1 for output layer, *2 for biases
+    weight_s.reserve((layer_sizes.size() + 1) * 2); 
     uint w_rows = num_inputs;
     weight_s.push_back(w_rows);
     uint w_cols = layer_sizes.front();
     weight_s.push_back(w_cols);
-    uint b_rows = w_cols; //should always be same as w_cols, but perhaps not for complex nns
+    uint b_rows = w_cols; 
     weight_s.push_back(b_rows);
     uint b_cols = 1;
     weight_s.push_back(b_cols);
@@ -123,7 +123,6 @@ std::vector<uint> forward_prop::get_weight_shapes() {
 
 std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > forward_prop::get_weight_matrices(Eigen::VectorXd & w){
     uint start_index = 0;
-    //assumes all matrices are 2d
     const unsigned long int num_matrices = weight_shapes.size() / 2; //.size() returns long uint, so make num_matrices this to get rid of warning
     std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices;
     weight_matrices.reserve(num_matrices);
@@ -153,7 +152,7 @@ std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajo
         ++b_c;        
     }
     else {
-        std::random_shuffle(rand_m_ind.data(), rand_m_ind.data() + m); //re-shuffle data
+        std::random_shuffle(rand_m_ind.data(), rand_m_ind.data() + m); 
         x_tr_b = x_tr_m(rand_m_ind.segment(0, batch_size), Eigen::placeholders::all);
         y_tr_b = y_tr_m(rand_m_ind.segment(0, batch_size), Eigen::placeholders::all);
         b_c = 2;        
@@ -162,7 +161,8 @@ std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajo
     return batch_v;
 }
 
-//change this to setup_ll method eventually
+//change this to setup_ll method eventually.
+//will set function pointer for likelihood accordingly so don't need if conditional in ()operator
 void forward_prop::calc_LL_norm(std::string LL_type_) {
     LL_type = LL_type_;
     if (LL_type == "gauss") {
@@ -206,6 +206,7 @@ double forward_prop::operator()(Eigen::VectorXd & w) {
     return LL;
 }
 
+//should be able to make these functions rather than methods. for non-batch ones, will have to reference x
 Eigen::MatrixXd forward_prop::slp_nn(std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x_tr_m * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));
     Eigen::MatrixXd a2 = (a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size()).transpose());
@@ -218,6 +219,7 @@ Eigen::MatrixXd forward_prop::slp_nn_batch(Eigen::Matrix<double, Eigen::Dynamic,
     return a2;
 }
 
+//could also make these functions (and pass reference to y for non-batch), but didn't in python versions
 double forward_prop::calc_gauss_ll(Eigen::MatrixXd & pred) {
     const double chi_sq = -1. / (2. * LL_var) * (pred - y_tr_m).squaredNorm();
     return chi_sq + LL_norm;
