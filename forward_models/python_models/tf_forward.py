@@ -4,6 +4,7 @@ import tensorflow as tf
 
 #in-house modules
 import tf_graphs as tfgs
+import test_data as td
 
 class tf_model():
 	def __init__(self, tf_graph, x_tr, y_tr, batch_size, layer_sizes):
@@ -16,13 +17,14 @@ class tf_model():
 		self.num_complete_batches = int(np.floor(float(self.m)/self.batch_size))
 		self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
 		if type(layer_sizes[0]) == 'list' or type(layer_sizes[0]) == 'tuple':
-			self.weight_shapes = layer_sizes #todo implement get_weight_shapes() to work for conv nets
+			self.weight_shapes = layer_sizes #todo implement get_weight_shapes() to work for conv nets, etc
 		else:
 			self.get_weight_shapes(layer_sizes) 
 		self.weights_ph = tuple([tf.placeholder(dtype=tf.float64, shape=weight_shape) for weight_shape in self.weight_shapes]) #think feed_dict keys have to be immutable
 		self.x_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_inputs])
 		self.y_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_outputs])
 		self.pred = tf_graph(self.x_ph, self.weights_ph)
+		self.LL_var = 1.
 
 	def get_weight_shapes(self, layer_sizes):
 		"""
@@ -40,7 +42,7 @@ class tf_model():
 		self.weight_shapes.append((input_size, self.num_outputs)) #use input_size in case layer_sizes is empty
 		self.weight_shapes.append((self.num_outputs,))
 
-	def setup_LL(self, fit_metric, LL_var = 1.):
+	def setup_LL(self, fit_metric):
 		"""
 		also only currently supports constant variance, but easily upgradable
 		"""
@@ -51,7 +53,7 @@ class tf_model():
 		if fit_metric == 'chisq':
 		    #temporary
 		    LL_dim = self.m * self.num_outputs
-		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(LL_var))
+		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 		    self.LL = self.calc_gauss_LL()
 		    #longer term solution (see comments above)
 		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
@@ -61,7 +63,7 @@ class tf_model():
 		else:
 		    raise NotImplementedError
 
-	def calc_gauss_LL(self, LL_var = 1.):
+	def calc_gauss_LL(self):
 	    """
 	    currently only supports constant variance, but can easily be upgraded
 	    if necessary.
@@ -69,7 +71,7 @@ class tf_model():
 	    """
 	    diff = self.pred - self.y_ph
 	    sq_diff = diff * diff
-	    chi_sq = -1. / (2. * LL_var) * tf.reduce_sum(sq_diff)
+	    chi_sq = -1. / (2. * self.LL_var) * tf.reduce_sum(sq_diff)
 	    return self.LL_const + chi_sq 
 
 	def calc_cross_ent_LL(self):
@@ -84,9 +86,12 @@ class tf_model():
 
 	def __call__(self, oned_weights):
 		"""
-		sets keras.Model weights, gets new batch of training data (or full batch), 
-		evaluates log likelihood function and returns its value.
+		sets arrays of weights (in correct shapes for tf graph), gets new batch of training data (or full batch), 
+		evaluates log likelihood function and returns its value by running session.
+		uses feed_dict to feed values for x_ph, y_ph and weights_ph
 		to be passed to polychord as loglikelihood function
+		n.b. if non-constant var, LL_var and LL_const need to be updated before
+		calculating LL
 		"""
 		x_batch, y_batch = self.get_batch()
 		weights = self.get_tf_weights(oned_weights)
@@ -96,6 +101,7 @@ class tf_model():
 	def get_tf_weights(self, new_oned_weights):
 		"""
 		adapted from set_k_weights() in keras_forward.py
+		weight matrices are still to right of previous activiation in multiplication
 		"""
 		weights = []
 		start_index = 0
@@ -155,22 +161,15 @@ class tf_model():
 	    return batches
 
 def main():
-
-	num_inputs = 2
-	num_outputs = 2
-	m = 3
-	batch_size = 3
-	a1_size = 5
-	np.random.seed(1337)
-	x_tr = np.random.random((m, num_inputs))
-	y_tr = np.array([1,0,0,1,1,0]).reshape(3,2)
+	x_tr, y_tr, w = td.get_test_data()
+	batch_size = x_tr.shape[0]
 	tf_graph = tfgs.slp_graph
+	a1_size = 5
 	layer_sizes = [a1_size]
 	tfm = tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes)
-	w = np.arange(27)
 	fit_metric = 'chisq'
 	tfm.setup_LL(fit_metric)
-	tfm(w)
+	print tfm(w)
 
 if __name__ == '__main__':
 	main()

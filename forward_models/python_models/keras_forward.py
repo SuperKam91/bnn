@@ -4,6 +4,7 @@ import tensorflow as tf
 
 #in-house modules
 import keras_models as kms
+import test_data as td
 
 class keras_model():
     """
@@ -36,17 +37,20 @@ class keras_model():
         self.m = x_tr.shape[0]     
         self.num_outputs = np.prod(np.shape(self.model.layers[-1].output.shape)) #np.prod is in case output isn't vector             
         self.batch_size = batch_size
+        #possibly could use boolean for whether remainder batch is needed, 
+        #but can't be bothered as would require modifying batch functions
         self.num_complete_batches = int(np.floor(float(self.m)/self.batch_size))
         self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
         self.get_weight_info()
+        self.LL_var = 1. #take this as an argument in the future probably, either in init or ll_setup
         
-    def calc_gauss_LL(self, x, y, LL_var = 1.):
+    def calc_gauss_LL(self, x, y):
         """
         WARNING: batch size given here should be same as one given in get_LL_const, or 
         normalisation constant won't be correct.
         as above, only supports scalar variance.
         """
-        return - self.LL_dim / (2. * LL_var) * self.model.evaluate(x, y) + self.LL_const 
+        return - self.LL_dim / (2. * self.LL_var) * self.model.evaluate(x, y) + self.LL_const 
 
     def calc_cross_ent_LL(self, x, y):
     	"""
@@ -58,7 +62,7 @@ class keras_model():
     	"""
     	return - self.m * self.model.evaluate(x, y, batch_size = self.batch_size)
         
-    def setup_LL(self, LL_var = 1.):
+    def setup_LL(self, loss):
         """
         calculates LL constant, and sets correct LL function, creates generator object for batches.
         currently only supports single (scalar) variance across all records and outputs,
@@ -70,6 +74,7 @@ class keras_model():
         if instead we define own loss function which allows for different variances,
         comment out lines below (and variance should be LL_dim x LL_dim array) and uncomment ones further down
         """
+        self.model.compile(loss=loss, optimizer='rmsprop') #optimiser is irrelevant for this class
         if self.m <= self.batch_size:
             self.batch_generator = None
         else:
@@ -77,7 +82,7 @@ class keras_model():
         self.LL_dim = self.batch_size * self.num_outputs
         if self.model.loss == 'mse':
             #temporary
-            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(LL_var))
+            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
             self.LL = self.calc_gauss_LL
             #longer term solution (see comments above)
             #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
@@ -151,6 +156,8 @@ class keras_model():
         """
         set weights of keras.Model using 1d array of weights.
         beside this, updates weight array attributes (which may be deleted after testing).
+        n.b. weight matrix shapes are such that weight matrix multiplies previous activiation to the right.
+        n.b. numpy arrays are by default stored in rowmajor order
         """
         self.set_oned_weights(new_oned_weights) #possibly delete after testing
         new_weights = []
@@ -170,6 +177,9 @@ class keras_model():
         """
         self.set_k_weights(oned_weights)
         x_batch, y_batch = self.get_batch()
+        #if non-constant variance ever necessary,
+        #self.LL_var and LL_const will have to be updated here, 
+        #same goes for tf and np forward classes 
         LL = self.LL(x_batch, y_batch)
         return LL
         
@@ -204,6 +214,12 @@ class keras_model():
         """
         create batches of size self.batch_size from self.m training examples
         for training.
+        could re-implement this so only one copy of training data is required: possibly 
+        permutation vector, and just split this into mini batches (a list of parts of the permutation vector)
+        and use elements of list to slice original dataset and return this in yield.
+        this way only list of parts of permutation vector needs to be saved by generator.
+        aside from the memory saving, i don't think this would be any slower than current method.
+        or could overwrite self.tr data with permuted data, then have list of parts of sequential vector
         In case of large training sets, batches may want to overwrite self.x_tr/self.y_tr
         (if not both have to be saved to memory as batches is saved in generator object).
         NOTE: in case of batch_size not being factor of m, last batch in list is of size
@@ -235,19 +251,15 @@ class keras_model():
 
 def main():
 
-	num_inputs = 2
-	num_outputs = 2
-	m = 3
-	batch_size = 3
-
-	model = kms.slp_model(num_inputs, num_outputs)
-	model.compile(loss='mse', optimizer='rmsprop')
-	np.random.seed(1337)
-	x_tr = np.random.random((m, num_inputs))
-	y_tr = np.array([1,0,0,1,1,0]).reshape(3,2)
-	km = keras_model(model, x_tr, y_tr, batch_size) 
-	km.setup_LL()
-	km(np.arange(27))
+    x_tr, y_tr, w = td.get_test_data()
+    a1_size = 5
+    layer_sizes = [5]
+    model = kms.slp_model(np.prod(x_tr.shape[1:]), np.prod(y_tr.shape[1:]), layer_sizes)
+    batch_size = x_tr.shape[0]
+    km = keras_model(model, x_tr, y_tr, batch_size)
+    loss = 'categorical_crossentropy' 
+    km.setup_LL(loss)
+    print km(w)
 
 if __name__ == '__main__':
 	main()

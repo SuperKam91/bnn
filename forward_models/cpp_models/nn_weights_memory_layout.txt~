@@ -1,0 +1,27 @@
+- for now assume x has shape (m, n_inp) and we want y to have shape (m, n_out). can mess around with these quite easily, but how the training data is read from file may have to be adapted for both python and c++, and change how they are stored.
+
+- for either c++, np, tf or k implementations, polychord will pass a 1-d array of parameters to the lhood functions.
+
+- by default numpy stores arrays row-wise, but eigen stores them column-wise.
+
+- for a given weight array 1w, these can either be in the order w_11, w_21, ..., 1w_i1, 1w_12, w_22, ..., w_ij or w_11, w_12, ..., w_1j, w_21, w_22, ..., w_ij where w_mn denotes the element (m,n) of the weight matrix w. Denote these orderings 1wc and 1wr respectively.
+
+- for the c++ implementation, if we evaluate x * w, then I believe it is more efficient to have x stored row-wise and w stored column-wise, in which case we want the ordering to be 1wc. 
+
+- alternatively we can have the 1wc ordering and store w row-wise, but I think this is less efficient.
+
+- if instead we evaluate (w^t * x^t)^t, then for efficiency we should store x column-wise and w row-wise, but I think all the transposing will add a dominating overhead (especially since x and first w matrix are maps). 
+
+- should check if transposing map somehow does it inplace, if it does then it won't reference adjacent matrix elements contigously in memory. if it doesn't then it must make a copy. both add overhead
+
+- in python implementation, when reading 1w, can store values in w matrices in column-wise order by changing the following line in get_np_weights/get_k_weights/get_tf_weights:
+weights.append(new_oned_weights[start_index:start_index + weight_size].reshape(weight_shape)) -> weights.append(new_oned_weights[start_index:start_index + weight_size].reshape(weight_shape, order='F'))
+but NOTE the documentation says that the underlying storage cannot be guaranteed to be column-wise. only way to get over this is to wrap reshaped_array as np.array(reshaped_array, order='F'). though I'm not 100% sure even this rectifies the issue.
+
+- NOTE, operating on a row-major and a column-major matrix which results in a matrix being returned, leads to the returned matrix being in row-major format (this affects activation matrices). again, I think this can be alleviated by doing np.array(col_row_matrices_op_returned_array, order='F'), but note this may change ordering of matrix elements
+
+- however x_tr and y_tr are retrieved, they can be stored in column-wise order.
+
+- messing around with storage order of training data is less crucial, as it should be a one-time operation at initiation of the program.
+
+- in tf and keras, seems pretty difficult to change to colmajor matrices.
