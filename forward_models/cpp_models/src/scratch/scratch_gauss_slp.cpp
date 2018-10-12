@@ -61,6 +61,8 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     // new (&x_tr_m) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(x_tr_v.data(), m, num_inputs); 
     // y_tr_v = get_tr_vec(num_outputs, y_path);
     // new (&y_tr_m) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(y_tr_v.data(), m, num_outputs);
+    // whether x_tr_m are eigen maps or matrices, using this method (and initialising them to zero in list) causes seg fault, annoyingly
+    // if really want to solve this, maybe look at ETH troubleshooting page 
 }
 
 std::vector<double> forward_prop::get_tr_vec(const uint & num_io, const std::string & path) { 
@@ -504,6 +506,7 @@ double get_LL(Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, 
 //for mini batches, will always be batch_size, apart from if there's a remainder, so just in case, need to calculate it every time...
 //life would be much easier if biases came in as vectors... (see get_weight_matrices() comments)
 //perhaps there is another way to add matrix of size 1xn to a * w, but i don't know one
+//note taking .size() ofr std::vector is O(1) time so shouldn't be an issue, likewise I don't think transposing an eigen vector has any overhead
 
 Eigen::MatrixXd slp_nn(Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > & x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));

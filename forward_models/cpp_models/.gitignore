@@ -1,5 +1,3 @@
-### ignore scratch files
-src/scratch.cpp
-src/scratch.hpp
+### ignore build and bin files
 build
 bin

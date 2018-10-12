@@ -1,0 +1,5 @@
+### ignore scratch files
+src/scratch.cpp
+src/scratch.hpp
+build
+bin

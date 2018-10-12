@@ -24,20 +24,20 @@ lib_dir = $(PWD)/lib
 
 # Find files
 srcs = $(wildcard $(source_dir)/*.cpp)
-objs = $(patsubst %, $(build_dir)/%, $(notdir $(srcs:%.cpp=%.o)))
-deps = $(patsubst %, $(build_dir)/%, $(notdir $(srcs:%.cpp=%.d)))
+objs = $(build_dir)/$(notdir $(srcs:%.cpp=%.o))
+deps = $(build_dir)/$(notdir $(srcs:%.cpp=%.d))
 test_srcs = $(wildcard $(test_dir)/*.cpp)
-test_objs = $(patsubst %, $(build_dir)/%, $(notdir $(test_srcs:%.cpp=%.o)))
-test_deps = $(patsubst %, $(build_dir)/%, $(notdir $(test_srcs:%.cpp=%.d)))
+test_objs = $(build_dir)/$(notdir $(test_srcs:%.cpp=%.o))
+test_deps = $(build_dir)/$(notdir $(test_srcs:%.cpp=%.d))
 scratch_srcs = $(wildcard $(scratch_dir)/*.cpp)
 scratch_objs = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.o)))
 scratch_deps = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.d)))
-$(warning $(objs))
+
 # Extra flags
-inc += -isystem$(external_dir) -I$(include_dir)
+inc += -isystem$(external_dir) -I$(include_dir) -I/home/astrophysics/PolyChordLite/src/polychord
 LDSHARED = $(LD) -shared
-LDLIBS +=  -l$(libname) #not currently used
-LDFLAGS += -L$(lib_dir) -lchord 
+LDLIBS +=  -l$(libname) -L/home/astrophysics/PolyChordLite -lchord #not currently used
+LDFLAGS += -L/home/astrophysics/PolyChordLite -lchord 
 
 all: main
 extra: tags doc
