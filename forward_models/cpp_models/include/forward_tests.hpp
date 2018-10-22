@@ -1,3 +1,3 @@
 #pragma once
 
-void forward_test_linear();
+double forward_test_linear();

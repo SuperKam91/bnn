@@ -31,7 +31,14 @@
 
 - matrix.unaryExpr(std::ptr_fun(func)) applies func to matrix element-wise. However for simpler functions supported by eigen e.g. exp(): matrix.array().exp() works
 
+- templates for functions which accept eigen arguments:
+https://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
+
+- good post on Eigen::Ref class:
+https://stackoverflow.com/questions/21132538/correct-usage-of-the-eigenref-class
+
 # troubleshooting tips:
 
 - https://github.com/ethz-asl/eigen_catkin/wiki/Eigen-Memory-Issues
+
 

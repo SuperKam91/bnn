@@ -4,43 +4,52 @@ import tensorflow as tf
 
 #in-house modules
 import tf_graphs as tfgs
-import test_data as td
+import tools
+import PyPolyChord
+import PyPolyChord.settings
+import priors
+import polychord_tools
+import output
+import input_tools
 
 class tf_model():
-	def __init__(self, tf_graph, x_tr, y_tr, batch_size, layer_sizes):
+	def __init__(self, tf_graph, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr = [], b_trainable_arr = []):
+		if len(m_trainable_arr) == 0:
+			m_trainable_arr = [True] * (len(layer_sizes) + 1)
+		if len(b_trainable_arr) == 0:
+			b_trainable_arr = [True] * (len(layer_sizes) + 1)
 		self.x_tr = x_tr
 		self.y_tr = y_tr
 		self.m = x_tr.shape[0]
-		self.num_outputs = np.prod(y_tr.shape[1:]) #assume same shape as output of nn
-		self.num_inputs = np.prod(x_tr.shape[1:])
+		self.num_outputs = np.prod(y_tr.shape[1:], dtype = int) #assume same shape as output of nn
+		self.num_inputs = np.prod(x_tr.shape[1:], dtype = int)
 		self.batch_size = batch_size
 		self.num_complete_batches = int(np.floor(float(self.m)/self.batch_size))
 		self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
-		if type(layer_sizes[0]) == 'list' or type(layer_sizes[0]) == 'tuple':
-			self.weight_shapes = layer_sizes #todo implement get_weight_shapes() to work for conv nets, etc
-		else:
-			self.get_weight_shapes(layer_sizes) 
+		self.get_weight_shapes(layer_sizes, m_trainable_arr, b_trainable_arr) 
 		self.weights_ph = tuple([tf.placeholder(dtype=tf.float64, shape=weight_shape) for weight_shape in self.weight_shapes]) #think feed_dict keys have to be immutable
 		self.x_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_inputs])
 		self.y_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_outputs])
 		self.pred = tf_graph(self.x_ph, self.weights_ph)
 		self.LL_var = 1.
 
-	def get_weight_shapes(self, layer_sizes):
+	def get_weight_shapes(self, layer_sizes, m_trainable_arr, b_trainable_arr):
 		"""
-		currently only works for vanilla nns.
-		layer_sizes should be a list of number of nodes for each
-		*hidden* layer
+		adapted from tools.get_weight_shapes3.
+		see calc_num_weights3 for relevance of trainable_arrs.
 		"""
 		self.weight_shapes = []
 		input_size = self.num_inputs
-		for layer in layer_sizes:
-			self.weight_shapes.append((input_size, layer))
-			self.weight_shapes.append((layer,))
+		for i, layer in enumerate(layer_sizes):
+			if m_trainable_arr[i]:	
+				self.weight_shapes.append((input_size, layer))
+			if b_trainable_arr[i]:
+				self.weight_shapes.append((layer,))
 			input_size = layer
-		#output layer
-		self.weight_shapes.append((input_size, self.num_outputs)) #use input_size in case layer_sizes is empty
-		self.weight_shapes.append((self.num_outputs,))
+		if m_trainable_arr[-1]:
+			self.weight_shapes.append((input_size, self.num_outputs)) 
+		if b_trainable_arr[-1]:
+			self.weight_shapes.append((self.num_outputs,))
 
 	def setup_LL(self, fit_metric):
 		"""
@@ -52,7 +61,7 @@ class tf_model():
 		    self.batch_generator = self.create_batch_generator()
 		if fit_metric == 'chisq':
 		    #temporary
-		    LL_dim = self.m * self.num_outputs
+		    LL_dim = self.batch_size * self.num_outputs
 		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 		    self.LL = self.calc_gauss_LL()
 		    #longer term solution (see comments above)
@@ -95,7 +104,7 @@ class tf_model():
 		"""
 		x_batch, y_batch = self.get_batch()
 		weights = self.get_tf_weights(oned_weights)
-		LL = tf.Session().run(self.LL, feed_dict={self.x_ph: x_batch, self.y_ph: y_batch, self.weights_ph: weights})
+		pred, LL = tf.Session().run([self.pred, self.LL], feed_dict={self.x_ph: x_batch, self.y_ph: y_batch, self.weights_ph: weights})
 		return LL
 
 	def get_tf_weights(self, new_oned_weights):
@@ -160,16 +169,45 @@ class tf_model():
 	        batches.append(batch)
 	    return batches
 
+
+
 def main():
-	x_tr, y_tr, w = td.get_test_data()
+	###### load training data
+	data = 'simple_tanh'
+	data_dir = '../../data/'
+	data_prefix = data_dir + data
+	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix)
 	batch_size = x_tr.shape[0]
-	tf_graph = tfgs.slp_graph
-	a1_size = 5
+	###### get weight information
+	a1_size = 2
 	layer_sizes = [a1_size]
-	tfm = tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes)
+	m_trainable_arr = [True, False]
+	b_trainable_arr = [False, False]
+	num_inputs = tools.get_num_inputs(x_tr)
+	num_outputs = tools.get_num_outputs(y_tr)
+	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	#setup tf graph
+	tf_graph = tfgs.slp_graph
+	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+	tfm = tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
 	fit_metric = 'chisq'
 	tfm.setup_LL(fit_metric)
-	print tfm(w)
+	###### test llhood output
+	# weight_type = 'linear'
+	# weight_f = data_dir + weight_type + '_weights.txt' 
+	# w = input_tools.get_weight_data(weight_f, num_weights)
+	# print tfm(w)
+	###### setup prior
+	prior = priors.UniformPrior(-1, 1)
+	###### setup polychord
+	nDerived = 0
+	settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
+	settings.base_dir = './tf_chains/'
+	settings.file_root = data
+	settings.nlive = 200
+	###### run polychord
+	PyPolyChord.run_polychord(tfm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+
 
 if __name__ == '__main__':
 	main()

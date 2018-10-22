@@ -1,9 +1,15 @@
 #########commercial modules
 import numpy as np
-import tensorflow as tf
 
 #in-house modules
 import np_models as nnns
+import tools
+import PyPolyChord
+import PyPolyChord.settings
+import priors
+import polychord_tools
+import output
+import input_tools
 
 class np_model():
 	"""
@@ -11,37 +17,43 @@ class np_model():
 	(same could probably be said for keras_model as well), might do this if i ever get
 	time.
 	"""
-	def __init__(self, np_nn, x_tr, y_tr, batch_size, layer_sizes):
+	def __init__(self, np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr = [], b_trainable_arr = []):
 		"""
 		subset of tf_model init()
 		"""
+		if len(m_trainable_arr) == 0:
+			m_trainable_arr = [True] * (len(layer_sizes) + 1)
+		if len(b_trainable_arr) == 0:
+			b_trainable_arr = [True] * (len(layer_sizes) + 1)
 		self.x_tr = x_tr
 		self.y_tr = y_tr
 		self.m = x_tr.shape[0]
-		self.num_outputs = np.prod(y_tr.shape[1:]) 
-		self.num_inputs = np.prod(x_tr.shape[1:])
+		self.num_outputs = np.prod(y_tr.shape[1:], dtype = int) 
+		self.num_inputs = np.prod(x_tr.shape[1:], dtype = int)
 		self.batch_size = batch_size
 		self.num_complete_batches = int(np.floor(float(self.m)/self.batch_size))
 		self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
-		if type(layer_sizes[0]) == 'list' or type(layer_sizes[0]) == 'tuple':
-			self.weight_shapes = layer_sizes 
-		else:
-			self.get_weight_shapes(layer_sizes) 
+		self.get_weight_shapes(layer_sizes, m_trainable_arr, b_trainable_arr) 
 		self.model = np_nn
 		self.LL_var = 1.
 
-	def get_weight_shapes(self, layer_sizes):
+	def get_weight_shapes(self, layer_sizes, m_trainable_arr, b_trainable_arr):
 		"""
-		taken from tf_model.get_weight_shapes()
+		adapted from tools.get_weight_shapes3 (same as tf version)
+		see tools.calc_num_weights3 for relevance of trainable_arrs
 		"""
 		self.weight_shapes = []
 		input_size = self.num_inputs
-		for layer in layer_sizes:
-			self.weight_shapes.append((input_size, layer))
-			self.weight_shapes.append((layer,))
+		for i, layer in enumerate(layer_sizes):
+			if m_trainable_arr[i]:	
+				self.weight_shapes.append((input_size, layer))
+			if b_trainable_arr[i]:
+				self.weight_shapes.append((layer,))
 			input_size = layer
-		self.weight_shapes.append((input_size, self.num_outputs)) 
-		self.weight_shapes.append((self.num_outputs,))
+		if m_trainable_arr[-1]:
+			self.weight_shapes.append((input_size, self.num_outputs)) 
+		if b_trainable_arr[-1]:
+			self.weight_shapes.append((self.num_outputs,))
 
 	def setup_LL(self, ll_type):
 		"""
@@ -61,7 +73,7 @@ class np_model():
 		    self.batch_generator = self.create_batch_generator()
 		if ll_type == 'gauss':
 		    #temporary
-		    LL_dim = self.m * self.num_outputs
+		    LL_dim = self.batch_size * self.num_outputs
 		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 		    self.LL = self.calc_gauss_LL
 		    #longer term solution (see comments above in keras_forward)
@@ -73,20 +85,20 @@ class np_model():
 		    raise NotImplementedError
 
 	def calc_gauss_LL(self, x, y, weights):
-	    """
-	    adapted from tf_model version, and like that only supports constant
-	    variance.
-	    """
-	    pred = self.model(x, weights)
-	    diff = pred - y
-	    sq_diff = diff * diff
-	    chi_sq = -1. / (2. * self.LL_var) * np.sum(sq_diff)
-	    return self.LL_const + chi_sq 
+		"""
+		adapted from tf_model version, and like that only supports constant
+		variance.
+		"""
+		pred = self.model(x, weights)
+		diff = pred - y
+		sq_diff = diff * diff
+		chi_sq = -1. / (2. * self.LL_var) * np.sum(sq_diff)
+		return self.LL_const + chi_sq 
 
 	def calc_cross_ent_LL(self, x, y, weights):
 	    """
 	    calculates categorical cross entropy (information entropy).
-	    MAKES NO ASSUMPTIONS ABOUT FORM OF Y OR PRED (i.e. that they're normalised)
+	    MAKES NO ASSUMPTIONS ABOUT FORM OF Y OR PRED (i.e. that they're normalised, and no softmax function is applied here)
 	    """
 	    pred = self.model(x, weights)
 	    return - np.sum(y * np.log(pred))
@@ -163,23 +175,44 @@ class np_model():
 	        batches.append(batch)
 	    return batches
 
-def main():
 
-	num_inputs = 2
-	num_outputs = 2
-	m = 6
-	batch_size = 5
-	a1_size = 5
-	np.random.seed(1337)
-	x_tr = np.arange(m * num_inputs).reshape(m, num_inputs)
-	y_tr = 6 * x_tr * x_tr + 17 * x_tr + 13
-	w = np.arange(27)
-	np_nn = nnns.slp_nn
+def main():
+	###### load training data
+	data = 'simple_tanh'
+	data_dir = '../../data/'
+	data_prefix = data_dir + data
+	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix)
+	batch_size = x_tr.shape[0]
+	###### get weight information
+	a1_size = 2
 	layer_sizes = [a1_size]
-	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes)
+	m_trainable_arr = [True, False]
+	b_trainable_arr = [False, False]
+	num_inputs = tools.get_num_inputs(x_tr)
+	num_outputs = tools.get_num_outputs(y_tr)
+	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	#set up np model
+	np_nn = nnns.slp_nn
+	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
 	ll_type = 'gauss'
 	npm.setup_LL(ll_type)
-	print npm(w)
+	###### test llhood output
+	# weight_type = 'linear'
+	# weight_f = data_dir + weight_type + '_weights.txt' 
+	# w = input_tools.get_weight_data(weight_f, num_weights)
+	# print npm(w)
+	###### setup prior
+	prior = priors.UniformPrior(-1, 1)
+	###### setup polychord
+	nDerived = 0
+	settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
+	settings.base_dir = './np_chains/'
+	settings.file_root = data
+	settings.nlive = 200
+	###### run polychord
+	PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+	
 
 if __name__ == '__main__':
 	main()

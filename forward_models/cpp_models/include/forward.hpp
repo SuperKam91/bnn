@@ -1,5 +1,6 @@
 #pragma once
 
+/* external codebases */
 #include <string>
 #include <vector>
 #include <Eigen/Dense>
@@ -10,11 +11,12 @@ double const_pi();
 
 class forward_prop {
 public:
-    forward_prop();
-	forward_prop(uint, uint, uint, uint, std::vector<uint>, std::string, std::string, std::function <Eigen::MatrixXd (Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_);
+	forward_prop(uint, uint, uint, uint, std::vector<uint>, std::string, std::string, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_);
+    forward_prop(uint, uint, uint, uint, std::vector<uint>, std::string, std::string, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool>);
+    forward_prop(uint, uint, uint, uint, std::vector<uint>, std::string, std::string, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool>, std::vector<bool>);
 	void setup_LL(std::string);
-	double operator()(Eigen::VectorXd & w);		
-private:
+	double operator()(Eigen::Ref<Eigen::VectorXd> w);		
+protected:
 	//member variables
 	const uint num_inputs;
     const uint num_outputs;
@@ -35,13 +37,15 @@ private:
     const uint num_batches;
     uint b_c;
     Eigen::Matrix<uint, Eigen::Dynamic, 1> rand_m_ind;
-    std::function <double(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor > &, Eigen::MatrixXd &, double &, double &) > LL_ptr; 
-    std::function <Eigen::MatrixXd (Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr;
+    std::function <double(Eigen::Ref < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor > >, Eigen::MatrixXd &, double &, double &) > LL_ptr; 
+    std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr;
     //member methods
 	std::vector<uint> get_weight_shapes();
+    std::vector<uint> get_weight_shapes(const std::vector<bool> &);
+    std::vector<uint> get_weight_shapes(const std::vector<bool> &, const std::vector<bool> &);
 	std::vector<double> get_tr_vec(const uint &, const std::string &);
 	uint calc_num_data(const uint &);
-	std::vector<double> file_2_vec(const std::string &, const uint &);
+	std::vector<double> file_2_vec(const uint &, const uint &, const std::string &);
     void get_batches(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b);
-	std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > get_weight_matrices(Eigen::VectorXd & w);
+	std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > get_weight_matrices(Eigen::Ref<Eigen::VectorXd> w);
 };

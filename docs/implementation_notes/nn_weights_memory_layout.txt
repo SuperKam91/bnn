@@ -26,4 +26,7 @@ but NOTE the documentation says that the underlying storage cannot be guaranteed
 
 - in tf and keras, seems pretty difficult to change to colmajor matrices.
 
-for now I will use row-major for everything, even this may be sub-optimal for certain areas
+- for now I will use row-major for everything apart from final output layer of c++ nn, even though this may be sub-optimal for certain areas
+
+- note that in traditional nn diagrams, the weight matrices have shapes (layer_size, prev_layer_size), as this suits the left-to-right diagrams where each node in a layer is stacked vertically (and each node contains a linear combination of the previous nodes, displayed horizontally).
+ In this work the weights have shape (prev_layer_size, layer_size). There's no particular reason I did this, but I don't think it benefits from changing it. Thus when labelling the parameters of the inference, for a given layer, w_jk denotes the weight multiplying the output of the jth node from the previous layer in the kth node of the current layer. Hence for layer i, w_ijk denotes this element of the matrix for the ith layer. Similarly, b_ij represents the jth element of the bias vector in the ith layer.

@@ -33,3 +33,5 @@
 - performing comparisons (==, >, etc.) of vectors is done on an element-wise basis.
 
 - Sometimes, it is practical to be able to .swap() the contents of two vectors. A common application is forcing a vector to release the memory it holds. crucially, .swap() swaps the .capacity() of the two vectors in question. Thus the following will remove all elements from v, and shrink its .capacity() to zero (or something small): v.clear(); v.swap(std::vector<type>()); v now has the capacity (and elements) of std::vector<type>(), and vice versa. The latter gets destroyed after this statement is executed, and thus the memory originally associated with v is freed, and one is left with a vector v with 0 elements and the same .capacity as std::vector<type>().
+
+- Apparently when iterating through vector it is more efficient to use an iterator than an integer counter. Not done this in forward prop code, but don't think it will make much difference for the small vectors we have to iterate through
