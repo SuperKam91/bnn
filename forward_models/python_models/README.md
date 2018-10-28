@@ -1,1 +1,1 @@
-# Forward propagation models built in keras or tensorflow
+# Forward propagation models built in keras, tensorflow and numpy
