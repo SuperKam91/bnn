@@ -57,12 +57,6 @@ void run_polychord_wrap() {
 
 double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
 {
-
-    //============================================================
-    // insert likelihood code here
-    //
-    //
-    //============================================================
     Eigen::Map<Eigen::VectorXd> w_m(theta, e_n_weights);
     return e_slp_nn(w_m);
 }
@@ -70,14 +64,9 @@ double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
 
 void prior (double cube[], double theta[], int nDims)
 {
-    //============================================================
-    // insert prior code here
-    //
-    //
-    //============================================================
-    for(int i=0;i<nDims;i++)
-        theta[i] = 2 * (cube[i] - 0.5);
-
+    Eigen::Map<Eigen::VectorXd> cube_m(cube, e_n_weights);
+    Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_weights);
+    e_ip(cube_m, theta_m);
 }
 
 

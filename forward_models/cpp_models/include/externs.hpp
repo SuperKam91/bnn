@@ -11,3 +11,4 @@ extern const uint e_n_weights;
 extern const std::string e_data_dir;
 extern const std::string e_data;
 extern const std::string e_chains_dir;
+extern inverse_prior e_ip;

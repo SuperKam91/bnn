@@ -109,6 +109,7 @@ class np_model():
 		n.b. if non-constant var, LL_var and LL_const need to be updated before
 		calculating LL
 		"""
+		print oned_weights
 		x_batch, y_batch = self.get_batch()
 		weights = self.get_np_weights(oned_weights)
 		LL = self.LL(x_batch, y_batch, weights)

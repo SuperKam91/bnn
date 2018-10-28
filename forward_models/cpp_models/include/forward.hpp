@@ -5,10 +5,6 @@
 #include <vector>
 #include <Eigen/Dense>
 
-double relu(double);
-
-double const_pi();
-
 class forward_prop {
 public:
 	forward_prop(uint, uint, uint, uint, std::vector<uint>, std::string, std::string, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_);

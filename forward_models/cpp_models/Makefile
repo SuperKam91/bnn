@@ -32,7 +32,6 @@ test_deps = $(patsubst %, $(build_dir)/%, $(notdir $(test_srcs:%.cpp=%.d)))
 scratch_srcs = $(wildcard $(scratch_dir)/*.cpp)
 scratch_objs = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.o)))
 scratch_deps = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.d)))
-$(warning $(objs))
 # Extra flags
 inc += -isystem$(external_dir) -I$(include_dir)
 LDSHARED = $(LD) -shared

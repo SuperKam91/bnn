@@ -1,5 +1,11 @@
 //haven't included relevant headers
 
+//potentially more efficient than currently implemented version (24/10/18)
+//but may have undefined results if ppf is evaluated before evaluating conditional
+//(these should be in returned vector, but could cause runtime errors)
+Eigen::VectorXd log_uniform_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+    return (p_m.array() < 0.5).select(-1. * pos_log_uniform_prior::operator()((0.5 - p_m.array()) * 2.), pos_log_uniform_prior::operator()((p_m.array() - 0.5) * 2.));
+}
 
 double relu_c::operator()(double x) { 
     if (x > 0.) {

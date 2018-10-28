@@ -29,7 +29,8 @@
 
 - to construct a map variable you need two pieces of information about the data: a pointer to the region of memory containing that data, and the desired shape of the matrix or vector e.g. Map<MatrixXF> mf(pf, rows, columns) where pf is a pointer to the data. Note map type objects are not the same as their dense counterparts, this is particularly important when writing your own functions which work with eigen objects.
 
-- matrix.unaryExpr(std::ptr_fun(func)) applies func to matrix element-wise. However for simpler functions supported by eigen e.g. exp(): matrix.array().exp() works
+- matrix.unaryExpr(std::ptr_fun(func)) applies func to matrix element-wise. However for simpler functions supported by eigen e.g. exp(): matrix.array().exp() works. passing std::function to .unaryExpr() also works, see my answer to:
+https://stackoverflow.com/questions/33786662/apply-function-to-all-eigen-matrix-element/53021003#53021003
 
 - templates for functions which accept eigen arguments:
 https://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html

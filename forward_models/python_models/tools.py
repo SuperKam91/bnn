@@ -122,3 +122,32 @@ def reshape_x_y_twod(x, y):
 
 def oned_arr_2_twod_arr(x):
 	return x.reshape(-1,1)
+
+def get_degen_dependence_lengths(weight_shapes, independent = False):
+	"""
+	get dependence_lengths for inverse_prior class,
+	i.e. the lengths in the param array which correspond
+	to contiguous dependent random variables.
+	assumes each layer is degenerate in the parameters
+	across the nodes
+	"""
+	if independent:
+		return [1]
+	else:
+		dependence_lengths = []
+		for weight_shape in weight_shapes:
+			if len(weight_shape) == 1: #bias
+				dependence_lengths.append(weight_shape[0])
+			else:
+				dependence_lengths.extend([weight_shape[1]] * weight_shape[0])
+	return dependence_lengths
+
+num_inputs = 3
+layer_sizes = [4,5]
+num_outputs = 6
+m_trainable_arr = [True, True, True]
+b_trainable_arr = [False, True, False]
+weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+print weight_shapes
+print get_degen_dependence_lengths(weight_shapes)
+

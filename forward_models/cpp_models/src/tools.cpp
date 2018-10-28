@@ -65,16 +65,16 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
     weight_s.push_back(w_rows);
     unsigned int w_cols = layer_sizes.front();
     weight_s.push_back(w_cols);
-    unsigned int b_rows = w_cols; 
+    unsigned int b_rows = 1;
     weight_s.push_back(b_rows);
-    unsigned int b_cols = 1;
+    unsigned int b_cols = w_cols; 
     weight_s.push_back(b_cols);
     for (unsigned int i = 1; i < layer_sizes.size(); ++i) {
         w_rows = w_cols;
         weight_s.push_back(w_rows);
         w_cols = layer_sizes.at(i);
         weight_s.push_back(w_cols);
-        b_rows = w_cols;
+        b_cols = w_cols;
         weight_s.push_back(b_rows);
         weight_s.push_back(b_cols);        
     }
@@ -82,7 +82,7 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
     weight_s.push_back(w_rows);
     w_cols = num_outs;
     weight_s.push_back(w_cols);
-    b_rows = w_cols;
+    b_cols = w_cols;
     weight_s.push_back(b_rows);
     weight_s.push_back(b_cols);
     return weight_s;
@@ -93,11 +93,11 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 	//don't bother reserving, could count number of trues in bool arr, but cba
 	unsigned int w_rows = num_inps;
 	unsigned int w_cols;
-    unsigned int b_cols = 1;
-    unsigned int b_rows;
+    unsigned int b_rows = 1;
+    unsigned int b_cols;
 	for (unsigned int i = 0; i < layer_sizes.size(); ++i) {
 		w_cols = layer_sizes.at(i);
-		b_rows = w_cols;
+		b_cols = w_cols;
 		if (trainable_v.at(i)) {	
 	        weight_s.push_back(w_rows);
 	        weight_s.push_back(w_cols);
@@ -111,7 +111,7 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 	    weight_s.push_back(w_rows);
 	    w_cols = num_outs;
 	    weight_s.push_back(w_cols);
-	    b_rows = w_cols;
+	    b_cols = w_cols;
 	    weight_s.push_back(b_rows);
 	    weight_s.push_back(b_cols);
 	}
@@ -122,11 +122,11 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 	std::vector<unsigned int> weight_s;
 	unsigned int w_rows = num_inps;
 	unsigned int w_cols;
-    unsigned int b_cols = 1;
-    unsigned int b_rows;
+    unsigned int b_rows = 1;
+    unsigned int b_cols;
 	for (unsigned int i = 0; i < layer_sizes.size(); ++i) {
 		w_cols = layer_sizes.at(i);
-		b_rows = w_cols;
+		b_cols = w_cols;
 		if (trainable_w_v.at(i)) {	
 	        weight_s.push_back(w_rows);
 	        weight_s.push_back(w_cols);
@@ -144,9 +144,32 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 	    weight_s.push_back(w_cols);
 	}
 	if (trainable_b_v.back()) {
-	    b_rows = w_cols;
+	    b_cols = w_cols;
 	    weight_s.push_back(b_rows);
 	    weight_s.push_back(b_cols);
 	}
 	return weight_s;	
 }
+
+std::vector<unsigned int> get_degen_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const bool & independent) {
+	if (independent) {
+		std::vector<unsigned int> dependence_lengths = {1};
+		return dependence_lengths;
+	}
+	else {
+		unsigned int dependence_length;
+		unsigned int num_rows;
+		//could reserve but would need to count number of sets of dependent variables 
+		//(sum of row numbers in weight_shapes)
+		std::vector<unsigned int> dependence_lengths;
+		for (unsigned int i = 0; i < weight_shapes.size() / 2; ++i) {
+			num_rows = weight_shapes.at(2 * i);
+			dependence_length = weight_shapes.at((2 * i) + 1);
+			for (unsigned int j = 0; j < num_rows; ++j) {
+				dependence_lengths.push_back(dependence_length);
+			}
+		}
+	return dependence_lengths;
+	}
+}
+

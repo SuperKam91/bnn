@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
 /* in-house code */
 #include "forward.hpp"
@@ -125,16 +126,16 @@ std::vector<uint> forward_prop::get_weight_shapes() {
     weight_s.push_back(w_rows);
     uint w_cols = layer_sizes.front();
     weight_s.push_back(w_cols);
-    uint b_rows = w_cols; //should always be same as w_cols, but perhaps not for complex nns
+    uint b_rows = 1; 
     weight_s.push_back(b_rows);
-    uint b_cols = 1;
+    uint b_cols = w_cols; //should always be same as w_cols, but perhaps not for complex nns
     weight_s.push_back(b_cols);
     for (uint i = 1; i < layer_sizes.size(); ++i) {
         w_rows = w_cols;
         weight_s.push_back(w_rows);
         w_cols = layer_sizes.at(i);
         weight_s.push_back(w_cols);
-        b_rows = w_cols;
+        b_cols = w_cols;
         weight_s.push_back(b_rows);
         weight_s.push_back(b_cols);        
     }
@@ -142,7 +143,7 @@ std::vector<uint> forward_prop::get_weight_shapes() {
     weight_s.push_back(w_rows);
     w_cols = num_outputs;
     weight_s.push_back(w_cols);
-    b_rows = w_cols;
+    b_cols = w_cols;
     weight_s.push_back(b_rows);
     weight_s.push_back(b_cols);
     return weight_s;
@@ -153,11 +154,11 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
     std::vector<uint> weight_s;
     uint w_rows = num_inputs;
     uint w_cols;
-    uint b_cols = 1;
-    uint b_rows;
+    uint b_rows = 1;
+    uint b_cols;
     for (uint i = 0; i < layer_sizes.size(); ++i) {
         w_cols = layer_sizes.at(i);
-        b_rows = w_cols;
+        b_cols = w_cols;
         if (trainable_v.at(i)) {    
             weight_s.push_back(w_rows);
             weight_s.push_back(w_cols);
@@ -171,7 +172,7 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
         weight_s.push_back(w_rows);
         w_cols = num_outputs;
         weight_s.push_back(w_cols);
-        b_rows = w_cols;
+        b_cols = w_cols;
         weight_s.push_back(b_rows);
         weight_s.push_back(b_cols);
     }
@@ -183,11 +184,11 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
     std::vector<uint> weight_s;
     uint w_rows = num_inputs;
     uint w_cols;
-    uint b_cols = 1;
-    uint b_rows;
+    uint b_rows = 1;
+    uint b_cols;
     for (uint i = 0; i < layer_sizes.size(); ++i) {
         w_cols = layer_sizes.at(i);
-        b_rows = w_cols;
+        b_cols = w_cols;
         if (trainable_w_v.at(i)) {  
             weight_s.push_back(w_rows);
             weight_s.push_back(w_cols);
@@ -205,7 +206,7 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
         weight_s.push_back(w_cols);
     }
     if (trainable_b_v.back()) {
-        b_rows = w_cols;
+        b_cols = w_cols;
         weight_s.push_back(b_rows);
         weight_s.push_back(b_cols);
     }
@@ -254,7 +255,7 @@ void forward_prop::setup_LL(std::string LL_type_) {
     if (LL_type == "gauss") {
         const uint LL_dim = m * num_outputs;
         LL_ptr = calc_gauss_ll;
-        LL_norm = -0.5 * LL_dim * (std::log(2. * const_pi()) + std::log(LL_var));
+        LL_norm = -0.5 * LL_dim * (std::log(2. * M_PI) + std::log(LL_var));
     }
     else if (LL_type == "categorical_crossentropy") {
         LL_ptr = calc_ce_ll;
@@ -265,6 +266,8 @@ void forward_prop::setup_LL(std::string LL_type_) {
     }
 }
 
+//discussion found on inverse_prior::prior_call_by_dependence_lengths applies to the nn calculations here, 
+//i.e. taking pred as reference argument to nn_ptr and overwriting in-function rather than assigning to return
 double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
     double LL;
     std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w);

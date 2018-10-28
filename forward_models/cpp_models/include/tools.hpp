@@ -16,3 +16,5 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 std::vector<unsigned int> get_weight_shapes(const unsigned int &, const std::vector<unsigned int> &, const unsigned int &, const std::vector<bool> &);
 
 std::vector<unsigned int> get_weight_shapes(const unsigned int &, const std::vector<unsigned int> &, const unsigned int &, const std::vector<bool> &, const std::vector<bool> &);
+
+std::vector<unsigned int> get_degen_dependence_lengths(const std::vector<unsigned int> &, const bool &);
