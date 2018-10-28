@@ -1,7 +1,0 @@
-### ignore build and bin files
-build
-bin
-src/scratch
-include/scratch
-src/other
-include/other
