@@ -141,13 +141,3 @@ def get_degen_dependence_lengths(weight_shapes, independent = False):
 			else:
 				dependence_lengths.extend([weight_shape[1]] * weight_shape[0])
 	return dependence_lengths
-
-num_inputs = 3
-layer_sizes = [4,5]
-num_outputs = 6
-m_trainable_arr = [True, True, True]
-b_trainable_arr = [False, True, False]
-weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-print weight_shapes
-print get_degen_dependence_lengths(weight_shapes)
-

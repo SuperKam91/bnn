@@ -2,11 +2,11 @@
 import numpy as np
 
 #in-house modules
-import np_models as nnns
+import np_models as npms
 import tools
 import PyPolyChord
 import PyPolyChord.settings
-import priors
+import inverse_priors
 import polychord_tools
 import output
 import input_tools
@@ -176,8 +176,7 @@ class np_model():
 	        batches.append(batch)
 	    return batches
 
-
-def main():
+def main(run_string):
 	###### load training data
 	data = 'simple_tanh'
 	data_dir = '../../data/'
@@ -192,19 +191,26 @@ def main():
 	num_inputs = tools.get_num_inputs(x_tr)
 	num_outputs = tools.get_num_outputs(y_tr)
 	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-	#set up np model
-	np_nn = nnns.slp_nn
+    ###### check shapes of training data
 	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+	#set up np model
+	np_nn = npms.slp_nn
 	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
 	ll_type = 'gauss'
 	npm.setup_LL(ll_type)
 	###### test llhood output
-	# weight_type = 'linear'
-	# weight_f = data_dir + weight_type + '_weights.txt' 
-	# w = input_tools.get_weight_data(weight_f, num_weights)
-	# print npm(w)
+    if "forward_test_linear" in run_string:
+    	forward_tests.forward_test_linear([npm], num_weights)
 	###### setup prior
-	prior = priors.UniformPrior(-1, 1)
+    prior_types = [7]
+	prior_hyperparams = [[-2., 2.]]
+	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	dependence_lengths = get_degen_dependence_lengths(weight_shapes)
+	param_prior_types = [0]
+	prior = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+	###### test prior output from nn setup
+	if "nn_prior_test" in run_string:
+		prior_tests.nn_prior_test(prior)
 	###### setup polychord
 	nDerived = 0
 	settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
@@ -212,8 +218,9 @@ def main():
 	settings.file_root = data
 	settings.nlive = 200
 	###### run polychord
-	PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
-	
+    if "polychord1" in run_string:
+    	PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
 
 if __name__ == '__main__':
-	main()
+	run_string = ''
+	main(run_string)

@@ -270,11 +270,3 @@ class sorted_cauchy_prior(cauchy_prior):
 		return cauchy_prior.__call__(self, t)
 
 
-p = np.array([0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6, 0.5, 0.5, 0.6, 0.4, 0.7, 0.3])
-prior_types = [7,8,9,10,11,12,13]
-prior_hyperparams = [[1, 100]]*7
-dependence_lengths = [2,2,2,2,2,2,2]
-param_prior_types = [0,1,2,3,4,5,6]
-n_dims = 14
-ip = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, n_dims)
-print ip(p)

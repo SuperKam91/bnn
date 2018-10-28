@@ -5,6 +5,7 @@
 
 /* in-house code */
 #include "forward.hpp"
+#include "inverse_priors.hpp"
 
 extern forward_prop e_slp_nn;
 extern const uint e_n_weights;
