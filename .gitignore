@@ -3,7 +3,7 @@ forward_models/cpp_models/build
 forward_models/cpp_models/bin
 ### ignore scratchpad
 forward_models/cpp_models/src/scratch
-forward_models/cpp_models/src/include/scratch
+forward_models/cpp_models/include/scratch
 ### ignore 'other' stuff
 forward_models/cpp_models/src/other
 forward_models/cpp_models/include/other
@@ -14,3 +14,6 @@ forward_models/cpp_models/include/test
 .pyc
 ### ignore ipynb checkpoint files
 .ipynb_checkpoints
+### ignore profiling directories
+forward_models/python_models/profiling
+forward_models/cpp_models/profiling
