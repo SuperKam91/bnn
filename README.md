@@ -1,8 +1,8 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 # timeline
-- Implement production level vanilla nn forward propagator in C++ or cython: 2-3 weeks
-- Look into bayes nn application to more complicated problems where MLE performs poorly. Eg deep reinforcement learning  
+- Implement support for stochastic hyperparameters (prior and likelihood)
+- Compare Bayesian and MLP estimates for small datasets, where using small networks compatible with PolyChord 1 is justifiable. e.g. Boston housing dataset regression, or FIFA World Cup 2018 classification.  
 - Look into tradeoff of using tensorflow with gpu support vs c++ implemented nns (possibly incorporating parallelisation) vs cython
 
 # background reading
