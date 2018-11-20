@@ -57,6 +57,12 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- Transfer learning is a potential opportunity: train all but final layer using ML methods (or use pre-trained weights) to e.g. learn featuring generating nodes. Train final layer(s) with BNN to learn accurate representation of non-linear combination of these learned features, and some uncertainty. Problem is, previous layers cannot be too big, or even training the final layers will not be possible. Unfortunately this will often be the case with CNNs, as the number of channels usually increases with depth into the NN (as the CNN learns a larger number of intricate features as one delves into the NN).
+
+- Seems that there are applications in ML in areas such as medicine, where number of training data is small. Thus one is forced to use small networks to prevent overfitting. See bullet below.
+
+- https://reader.elsevier.com/reader/sd/pii/S0933365716301749?token=D3ADCF7EC51CE6EBC44A540012EAAFB1F5D8CFC8BA12B847B380A83E838D1F4444E61168F6FA06D9F43A5D794D04504D describes a regression problem with five input features and 35 records. Use a one layer NN (~40 parameters), but train over 20000 NNs (with different parameter initialisations, and different randomisations of data for stochastic gradient descent), and pick NN with best performance on cross-validation set, for their final evaluation. Use RMSE and R^2 regression coefficient to evaluate performance, and get values RMSE = 0.85 and R^2 = 0.983 for final evaluation. I believe they run the algorithms for ~30 epochs.
+
 - Mackay uses Gaussian approximation to get solutions to BNNs. Picks maximum likelihood vlaue of hyperparameters (using analytical solution I believe), then looks at evidence values and training set error to evaluate models.
 
 - Neal uses HMC to sample the BNN parameters, and Gibbs sampling to sample the hyperparameters. n.b. HMC requires gradient information, so can't be used to sample hyperparameters directly (to my knowledge). Also, HMC in essence has characteristics similar to common optimisation methods which use 'momentum' and 'velocity'.
