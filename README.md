@@ -57,7 +57,9 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
-- Transfer learning is a potential opportunity: train all but final layer using ML methods (or use pre-trained weights) to e.g. learn featuring generating nodes. Train final layer(s) with BNN to learn accurate representation of non-linear combination of these learned features, and some uncertainty. Problem is, previous layers cannot be too big, or even training the final layers will not be possible. Unfortunately this will often be the case with CNNs, as the number of channels usually increases with depth into the NN (as the CNN learns a larger number of intricate features as one delves into the NN).
+- Transfer learning is a potential opportunity: train all but final layer using MLE methods (or use pre-trained weights) to e.g. learn featuring generating nodes. Train final layer(s) with BNN to learn accurate representation of non-linear combination of these learned features, and some uncertainty. Problem is, previous layers cannot be too big, or even training the final layers will not be possible. Unfortunately this will often be the case with CNNs, as the number of channels usually increases with depth into the NN (as the CNN learns a larger number of intricate features as one delves into the NN).
+
+- An alternative to the above is using MLE/MPE methods to train an (variational) autoencoder to reduce the dimensions of the input, and then feed this to a BNN. Downside of this is you will lose some information in the encoding of the input, which may outweight the gains of treating the problem in a Bayesian framework
 
 - Seems that there are applications in ML in areas such as medicine, where number of training data is small. Thus one is forced to use small networks to prevent overfitting. See bullet below.
 
