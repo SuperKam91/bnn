@@ -1,5 +1,7 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
+# issues
+- Strange behaviour in weights in cpp_chains/FIFA_2018_Statistics_slp_sm_10.txt. After first run ended (can't remember if it terminated cleanly), was a total of 22023 samples. 22022 had weight 0.01492 and -2*LL 18.42, 22023 had weight 0.00602 and -2*LL 18.48, then when resuming run, 22024 had weight 0.01491 and -2*LL 18.425. final sample had weight 0.01749 and -2*LL 14.933
 # timeline
 - Implement support for stochastic hyperparameters (prior and likelihood)
 - Compare Bayesian and MLP estimates for small datasets, where using small networks compatible with PolyChord 1 is justifiable. e.g. Boston housing dataset regression, or FIFA World Cup 2018 classification.  
