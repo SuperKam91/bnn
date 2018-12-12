@@ -8,8 +8,9 @@ import PyPolyChord
 import PyPolyChord.settings
 import inverse_priors
 import polychord_tools
-import output
 import input_tools
+import prior_tests
+import forward_tests
 
 class np_model():
 	"""
@@ -73,14 +74,23 @@ class np_model():
 		    self.batch_generator = self.create_batch_generator()
 		if ll_type == 'gauss':
 		    #temporary
-		    LL_dim = self.batch_size * self.num_outputs
-		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+		    self.LL_dim = self.batch_size * self.num_outputs
+		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 		    self.LL = self.calc_gauss_LL
 		    #longer term solution (see comments above in keras_forward)
 		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
 		elif ll_type == 'categorical_crossentropy':
 		    self.LL_const = 0.
 		    self.LL = self.calc_cross_ent_LL
+		elif ll_type == 'av_gauss':
+		    self.LL_dim = self.batch_size * self.num_outputs
+		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+		    self.LL = self.calc_av_gauss_LL
+		    #longer term solution (see comments above in keras_forward)
+		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
+		elif ll_type == 'av_categorical_crossentropy':
+		    self.LL_const = 0.
+		    self.LL = self.calc_av_cross_ent_LL
 		else:
 		    raise NotImplementedError
 
@@ -93,15 +103,41 @@ class np_model():
 		diff = pred - y
 		sq_diff = diff * diff
 		chi_sq = -1. / (2. * self.LL_var) * np.sum(sq_diff)
+		return self.LL_const + chi_sq
+
+	def calc_av_gauss_LL(self, x, y, weights):
+		"""
+		calculates LL associated with average of cost function (which keras MPE uses)
+		"""
+		pred = self.model(x, weights)
+		diff = pred - y
+		sq_diff = diff * diff
+		chi_sq = -1. / (2. * self.LL_var) * 1. / self.LL_dim * np.sum(sq_diff)
 		return self.LL_const + chi_sq 
 
 	def calc_cross_ent_LL(self, x, y, weights):
 	    """
 	    calculates categorical cross entropy (information entropy).
-	    MAKES NO ASSUMPTIONS ABOUT FORM OF Y OR PRED (i.e. that they're normalised, and no softmax function is applied here)
+	    MAKES NO ASSUMPTIONS ABOUT FORM OF Y OR PRED (i.e. that they're normalised, and no softmax function is applied here).
+	    Computes total LL, not average
 	    """
 	    pred = self.model(x, weights)
-	    return - np.sum(y * np.log(pred))
+	    return np.sum(y * np.log(pred))
+
+	def calc_av_cross_ent_LL(self, x, y, weights):
+	    """
+	    Computes LL associated with average cost function of 
+	    categorical crossentropy LL (which keras MPE uses). 
+	    note this LL has a normalisation factor which depends on the predictions,
+	    and thus has to be re-calculated upon each LL call. 
+	    this completely alters the 'associated' cost function, such that it no longer
+	    lines up with the keras MPE one, so it probably isn't useful.
+	    but is included for completeness. 
+	    """
+	    pred = self.model(x, weights)
+	    self.LL_const = -1 * np.log((pred**(1. / self.batch_size)).prod(axis = 0).sum())
+	    return self.LL_const
+	    return 1. / self.batch_size * np.sum(y * np.log(pred)) + self.LL_const
 
 	def __call__(self, oned_weights):
 		"""
@@ -109,11 +145,24 @@ class np_model():
 		n.b. if non-constant var, LL_var and LL_const need to be updated before
 		calculating LL
 		"""
-		print oned_weights
 		x_batch, y_batch = self.get_batch()
 		weights = self.get_np_weights(oned_weights)
 		LL = self.LL(x_batch, y_batch, weights)
 		return LL
+
+	def test_output(self, oned_weights):
+		print "one-d weights:"
+		print oned_weights
+		weights = self.get_np_weights(oned_weights)
+		x_batch, y_batch = self.get_batch()
+		print "input batch:"
+		print x_batch
+		print "output batch:"
+		print y_batch
+		print "nn output:"
+		print self.model(x_batch, weights)
+		print "log likelihood:"
+		print self.LL(x_batch, y_batch, weights) 
 
 	def get_np_weights(self, new_oned_weights):
 		"""
@@ -178,36 +227,38 @@ class np_model():
 
 def main(run_string):
 	###### load training data
-	data = 'simple_tanh'
-	data_dir = '../../data/'
+	data = 'FIFA_2018_Statistics'
+	data_suffix = '_tr_1.csv'
+	data_dir = '../../data/kaggle/'
 	data_prefix = data_dir + data
-	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix)
+	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
 	batch_size = x_tr.shape[0]
 	###### get weight information
-	a1_size = 2
-	layer_sizes = [a1_size]
-	m_trainable_arr = [True, False]
-	b_trainable_arr = [False, False]
+	weights_dir = '../../data/'
+	a1_size = 0
+	layer_sizes = []
+	m_trainable_arr = [True]
+	b_trainable_arr = [True]
 	num_inputs = tools.get_num_inputs(x_tr)
 	num_outputs = tools.get_num_outputs(y_tr)
 	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-    ###### check shapes of training data
+	###### check shapes of training data
 	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
 	#set up np model
-	np_nn = npms.slp_nn
+	np_nn = npms.slp_sm
 	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
-	ll_type = 'gauss'
+	ll_type = 'av_categorical_crossentropy' # 'gauss', 'av_gauss', 'categorical_crossentropy', 'av_categorical_crossentropy'
 	npm.setup_LL(ll_type)
 	###### test llhood output
-    if "forward_test_linear" in run_string:
-    	forward_tests.forward_test_linear([npm], num_weights)
+	if "forward_test_linear" in run_string:
+		forward_tests.forward_test_linear([npm], num_weights, weights_dir)
 	###### setup prior
-    prior_types = [7]
-	prior_hyperparams = [[-2., 2.]]
-	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-	dependence_lengths = get_degen_dependence_lengths(weight_shapes)
+	prior_types = [4]
+	prior_hyperparams = [[0., 1.]]
+	weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
 	param_prior_types = [0]
-	prior = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+	prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
 	###### test prior output from nn setup
 	if "nn_prior_test" in run_string:
 		prior_tests.nn_prior_test(prior)
@@ -215,12 +266,12 @@ def main(run_string):
 	nDerived = 0
 	settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
 	settings.base_dir = './np_chains/'
-	settings.file_root = data
+	settings.file_root = data + "_slp_sm"
 	settings.nlive = 200
 	###### run polychord
-    if "polychord1" in run_string:
-    	PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+	if "polychord1" in run_string:
+		PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
 
 if __name__ == '__main__':
-	run_string = ''
+	run_string = 'forward_test_linear'
 	main(run_string)

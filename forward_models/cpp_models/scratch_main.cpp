@@ -3,7 +3,14 @@
 #include <iostream>
 #include <Eigen/Core>
 
+#include <algorithm> // for copy
+#include <iterator> // for ostream_iterator
+
 /* in-house code */
+
+//super useful line of code to print out vector in one line:
+//std::copy(*vec*.begin(), *vec*.end(), std::ostream_iterator<*vec type*>(std::cout, *delimiter*));
+
 
 class Exp_c {
 public:

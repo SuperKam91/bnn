@@ -8,6 +8,9 @@ def calc_num_weights(num_inputs, layer_sizes, num_outputs):
 	calculate total number of weights (and biases), 
 	i.e. the dimensionality of the inference problem
 	"""
+	#no hidden layers
+	if len(layer_sizes) == 0:
+		return (num_inputs + 1) * num_outputs
 	n = (num_inputs + 1) * layer_sizes[0]
 	for i in range(1, len(layer_sizes)):
 		n += (layer_sizes[i-1] + 1) * layer_sizes[i] 
@@ -19,6 +22,11 @@ def calc_num_weights2(num_inputs, layer_sizes, num_outputs, trainable_arr):
 	accounts for fact that layers may not be trainable 
 	"""
 	n = 0
+	if len(layer_sizes) == 0:
+		if trainable_arr[0]:
+			return (num_inputs + 1) * num_outputs
+		else:
+			return n
 	if trainable_arr[0]:
 		n += (num_inputs + 1) * layer_sizes[0]
 	for i in range(1, len(layer_sizes)):
@@ -34,6 +42,12 @@ def calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_t
 	trainable
 	"""
 	n = 0
+	if len(layer_sizes) == 0:
+		if m_trainable_arr[0]:
+			n += num_inputs * num_outputs
+		if b_trainable_arr[0]:
+			n += num_outputs
+		return n			
 	if m_trainable_arr[0]:
 		n += num_inputs * layer_sizes[0]
 	if b_trainable_arr[0]:
@@ -141,3 +155,95 @@ def get_degen_dependence_lengths(weight_shapes, independent = False):
 			else:
 				dependence_lengths.extend([weight_shape[1]] * weight_shape[0])
 	return dependence_lengths
+
+def get_degen_dependence_lengths2(weight_shapes, independent = False):
+	"""
+	same as above but assumes that one just wants one weight (the first weight per node) from each node in a layer
+	to be sorted w.r.t. corresponding weight in other nodes. This should be enough to ensure nodes aren't degenerate.
+	does this for weight corresponding to first node of previous layer, for each node in current layer.
+	doesn't do it for biases, i.e. assumes these aren't dependent. this means in the unlikely event a layer only has biases, they will be
+	treated as independent, and will be degenerate. However, this scenario should never occur in practice.
+	e.g. for given layer, one weight per node will be assumed to be dependent with the corresponding weight in the other
+	nodes in the layer. the remaining weights, plus the biases are assumed to be independent.
+	"""
+	if independent:
+		return [1]
+	else:
+		dependence_lengths = []
+		for weight_shape in weight_shapes:
+			if len(weight_shape) == 1: #bias
+				dependence_lengths.extend(weight_shape[0] * [1])
+			else:
+				dependence_lengths.append(weight_shape[1])
+				dependence_lengths.extend((weight_shape[0] - 1) * weight_shape[1] * [1])
+	return dependence_lengths
+
+def get_degen_dependence_lengths3(weight_shapes, independent = False):
+	"""
+	same as get_degen_dependence_lengths() but treats all weights/biases in final layer as independent.
+	note it also assumes that the final layer has both weights and biases
+	"""
+	if independent:
+		return [1]
+	else:
+		dependence_lengths = []
+		for i in range(len(weight_shapes) - 2):
+			if len(weight_shapes[i]) == 1: #bias
+				dependence_lengths.append(weight_shapes[i][0])
+			else:
+				dependence_lengths.extend([weight_shapes[i][1]] * weight_shapes[i][0])
+		dependence_lengths.extend((weight_shapes[-2][0] + 1) * weight_shapes[-2][1] * [1]) #+1 is for biases. assumes 2nd dim of final two weight_shapes are same (should be)
+	return dependence_lengths
+
+def get_degen_dependence_lengths4(weight_shapes, independent = False):
+	"""
+	essentially combines get_degen_dependence_lengths2 and get_degen_dependence_lengths3
+	"""
+	if independent:
+		return [1]
+	else:
+		dependence_lengths = []
+		for i in range(len(weight_shapes) - 2):
+			if len(weight_shapes[i]) == 1: #bias
+				dependence_lengths.extend(weight_shapes[i][0] * [1])
+			else:
+				dependence_lengths.append(weight_shapes[i][1])
+				dependence_lengths.extend((weight_shapes[i][0] - 1) * weight_shapes[i][1] * [1])
+		dependence_lengths.extend((weight_shapes[-2][0] + 1) * weight_shapes[-2][1] * [1]) #+1 is for biases. assumes 2nd dim of final two weight_shapes are same (should be)
+	return dependence_lengths
+
+def round_probabilities(p):
+	"""
+	for given row, set element with highest value to one,
+	and all others to zero.
+	e.g.
+	[[0.1,0.2,0.7], 
+	[0.5,0.2,0.3]]
+	- > 
+	[[0,0,1], 
+	[1,0,0]].
+	not been tested for case of equal probabilities in a row
+	"""
+	return (p == p.max(axis=1)[:,None]).astype(float) 
+
+def decode_onehot(one_hot_v):
+	"""
+	take set of one hot vectors (represented by each row of the matrix)
+	and convert each one to a scalar corresponding to the index of the one hot.
+	i.e. takes an (m, num_classes) array and returns a (m,) array where each element in the
+	latter can take integer values in [0, num_classes).
+	e,g,
+	[[0,0,1], [1,0,0], [0,1,0]]
+	- >
+	[2,0,1] 
+	"""
+	return one_hot_v.argmax(axis=1)
+
+def check_dtypes(y_true, y_pred):
+	"""
+	ensures both y_true and y_pred are numpy arrays of type np.float64.
+	if not some keras metric functions may screw up
+	"""
+	y_true = y_true.astype(np.float64, copy=False)
+	y_pred = y_pred.astype(np.float64, copy=False)
+	return y_true, y_pred

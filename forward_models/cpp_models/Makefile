@@ -112,7 +112,7 @@ tags: $(all_srcs)
 .PHONY: clean main test
 
 clean:
-	$(RM) -r $(objs) $(deps)
+	$(RM) -r $(objs) $(deps) $(build_dir)/main.*
 
 purge: clean
 	$(RM) -r $(build_dir) $(lib_dir)

@@ -264,7 +264,7 @@ void sorted_cauchy_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref
 	cauchy_prior::operator()(t_m, theta_m);
 }
 
-
+using namespace std::placeholders;
 //since prior_call_by_dependence_lengths is the only implementation the calling function can use, if one wants to use the same prior for
 //all parameters, set the dependence length = n_dims 
 inverse_prior::inverse_prior(std::vector<uint> prior_types_, std::vector<double> prior_hyperparams_, std::vector<uint> dependence_lengths_, std::vector<uint> param_prior_types_, uint n_dims_) :
@@ -352,10 +352,30 @@ void inverse_prior::prior_call_by_dependence_lengths(Eigen::Ref<Eigen::VectorXd>
 	}
 }
 
-//in future may implement method for all parameters independent and using same prior,
-//all parameters independent but use different priors,
+void inverse_prior::prior_call_ind_same(Eigen::Ref<Eigen::VectorXd> & cube_m, Eigen::Ref<Eigen::VectorXd> & theta_m) {
+	(ppf_ptr_v.at(0))->operator()(cube_m, theta_m);
+}
+
+//in future may implement method for all parameters independent but use different priors,
 //and most importantly, independent parameters which aren't contiguous (will require truth array as in python case)
+//if one makes prior_call_ptr a member variable, program breaks (see declaration in header file for error), 
+//could make it global, but I think there's a chance this is dangerous, so I won't.
+//so have to have it as local and evaluate conditional upon every call instead, which is a shame.
+//could try get it to work as member variable, but cba atm.
 void inverse_prior::operator()(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m){
-	///prior_call_by_dependence_lengths only way currently implemented
-	return prior_call_by_dependence_lengths(cube_m, theta_m);
+	std::function<void(Eigen::Ref<Eigen::VectorXd> &, Eigen::Ref<Eigen::VectorXd> &)> prior_call_ptr;
+	if (dependence_lengths.size() == 1) {
+		prior_call_ptr = std::bind(&inverse_prior::prior_call_ind_same, this, _1, _2);
+	}
+	else {
+		prior_call_ptr = std::bind(&inverse_prior::prior_call_by_dependence_lengths, this, _1, _2);
+	}
+	prior_call_ptr(cube_m, theta_m);
+	//alternative, probably more efficient, but less elegant
+	// if (dependence_lengths.size() == 1) {
+		// prior_call_ind_same(cube_m, theta_m);	
+	// }
+	// else {
+		// prior_call_by_dependence_lengths(cube_m, theta_m);		
+	// }
 }

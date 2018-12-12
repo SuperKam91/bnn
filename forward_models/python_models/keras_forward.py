@@ -1,3 +1,6 @@
+#for some reason if you import scipy.stats before tf, get ImportError on scipy.stats import
+import inverse_priors
+
 #########commercial modules
 import numpy as np
 import tensorflow as tf
@@ -7,9 +10,7 @@ import keras_models as kms
 import tools
 import PyPolyChord
 import PyPolyChord.settings
-import inverse_priors
 import polychord_tools
-import output
 import input_tools
 import prior_tests
 import forward_tests
@@ -43,7 +44,7 @@ class keras_model():
         self.x_tr = x_tr
         self.y_tr = y_tr
         self.m = x_tr.shape[0]     
-        self.num_outputs = np.prod(np.shape(self.model.layers[-1].output.shape[1:])) #np.prod is in case output isn't vector             
+        self.num_outputs = np.prod(self.model.layers[-1].output.shape[1:].as_list()) #np.prod is in case output isn't vector
         self.batch_size = batch_size
         #possibly could use boolean for whether remainder batch is needed, 
         #but can't be bothered as would require modifying batch functions
@@ -51,7 +52,52 @@ class keras_model():
         self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
         self.get_weight_info()
         self.LL_var = 1. #take this as an argument in the future probably, either in init or ll_setup
-        
+
+    def setup_LL(self, loss):
+        """
+        calculates LL constant, and sets correct LL function, creates generator object for batches.
+        currently only supports single (scalar) variance across all records and outputs,
+        since we use model.evaluate() to calculate cost with predefined loss functions (e.g. mse, crossentropy) 
+        which evaluates sums across examples/outputs
+        (so variance can't be included in each summation).
+        if we instead calculate likelihood from final layer output, will probably use scipy.stats to do so
+        and this function will become redundant. 
+        if instead we define own loss function which allows for different variances,
+        comment out lines below (and variance should be LL_dim x LL_dim array) and uncomment ones further down
+        """
+        if self.m <= self.batch_size:
+            self.batch_generator = None
+        else:
+            self.batch_generator = self.create_batch_generator()
+        self.LL_dim = self.batch_size * self.num_outputs
+        if loss == 'squared_error':
+            self.model.compile(loss='mse', optimizer='rmsprop') #optimiser is irrelevant for this class
+            #temporary
+            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+            self.LL = self.calc_gauss_LL
+            #longer term solution (see comments above)
+            #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
+        elif loss == 'categorical_crossentropy':
+            self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+            self.LL_const = 0.
+            self.LL = self.calc_cross_ent_LL
+        elif loss == 'av_squared_error':
+            self.model.compile(loss='mse', optimizer='rmsprop') 
+            #temporary
+            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+            self.LL = self.calc_av_gauss_LL
+        elif loss == 'av_categorical_crossentropy':
+            self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+            self.LL_const = 0.
+            self.LL = self.calc_av_cross_ent_LL
+        else:
+            raise NotImplementedError
+
+#for LL calculations, may want to consider taking average as this is what MLE/MPE estimates do, meaning they essentially sample
+#from a different likelihood (MPE samples from LL with a variance which is a factor of batch_size larger).
+#furthermore for MPE, using optimisation techniques which use gradients e.g. gradient descent, derivative is a factor of 
+#batch_size smaller, so the stepsize is also effected
+
     def calc_gauss_LL(self, x, y):
         """
         note batch_size passed to .evaluate here is irrelevant to the LL value calculated for bayesian inference,
@@ -71,46 +117,36 @@ class keras_model():
         LL = - self.LL_dim / (2. * self.LL_var) * self.model.evaluate(x, y, batch_size = self.batch_size, verbose = 0) + self.LL_const  
         return LL
 
+    def calc_av_gauss_LL(self, x, y):
+        """
+        adapted from non-average version.
+        see np_forward.py implementation for more
+        details concerning 'average'.
+        """
+        LL = - 1 / (2. * self.LL_var) * self.model.evaluate(x, y, batch_size = self.batch_size, verbose = 0) + self.LL_const  
+        return LL
+
     def calc_cross_ent_LL(self, x, y):
     	"""
-		n.b. for cat cross entr model.evaluate calculates cross entropy then takes average over batch_size.
-        CHECK AVERAGE IS OVER BATCH_SIZE AND NOT LL_DIM
+		n.b. for cat cross entr model.evaluate calculates cross entropy.
 		uses from_logits=False i.e. does NOT compute softmax for each m, but instead scales each output to
-		y_i -> y_i / sum_j y_j. thus it is ADVISABLE to have an explicit softmax layer in your Model
+		y_i -> y_i / sum_j y_j, see: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/python/keras/backend.py
+		thus it is ADVISABLE to have an explicit softmax layer in your Model.
+		n.b. model.evaluate calculates cross entropy for each record in batch_size, then averages.
 		n.b. requires true y values to be categorical (one-hot) vectors
 		including variance in this llikelihood doesn't make sense?
+		n.b. LL = batch_size * categorical_cross_ent
     	"""
     	return - self.batch_size * self.model.evaluate(x, y, batch_size = self.batch_size, verbose = 0)
-        
-    def setup_LL(self, loss):
+
+    def calc_av_cross_ent_LL(self, x, y):
         """
-        calculates LL constant, and sets correct LL function, creates generator object for batches.
-        currently only supports single (scalar) variance across all records and outputs,
-        since we use model.evaluate() to calculate cost with predefined loss functions (e.g. mse, crossentropy) 
-        which evaluates sums across examples/outputs
-        (so variance can't be included in each summation).
-        if we instead calculate likelihood from final layer output, will probably use scipy.stats to do so
-        and this function will become redundant. 
-        if instead we define own loss function which allows for different variances,
-        comment out lines below (and variance should be LL_dim x LL_dim array) and uncomment ones further down
+        adapted from non-average version.
+        see np_forward.py implementation for more
+        details concerning 'average'.
         """
-        self.model.compile(loss=loss, optimizer='rmsprop') #optimiser is irrelevant for this class
-        if self.m <= self.batch_size:
-            self.batch_generator = None
-        else:
-            self.batch_generator = self.create_batch_generator()
-        self.LL_dim = self.batch_size * self.num_outputs
-        if self.model.loss == 'mse':
-            #temporary
-            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
-            self.LL = self.calc_gauss_LL
-            #longer term solution (see comments above)
-            #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
-        elif self.model.loss == 'categorical_crossentropy':
-        	self.LL_const = 0.
-        	self.LL = self.calc_cross_ent_LL
-        else:
-            raise NotImplementedError
+        self.LL_const = -1 * np.log((self.model.predict(x)**(1. / self.batch_size)).prod(axis = 0).sum())
+        return - 1. * self.model.evaluate(x, y, batch_size = self.batch_size, verbose = 0) + self.LL_const
         
     def get_weight_info(self):
         """
@@ -212,6 +248,20 @@ class keras_model():
         #same goes for tf and np forward classes 
         LL = self.LL(x_batch, y_batch)
         return LL
+
+    def test_output(self, oned_weights):
+        print "one-d weights:"
+        print oned_weights
+        self.set_k_weights(oned_weights)
+        x_batch, y_batch = self.get_batch()
+        print "input batch:"
+        print x_batch
+        print "output batch:"
+        print y_batch
+        print "nn output:"
+        print self.model.predict(x_batch)
+        print "log likelihood:"
+        print self.LL(x_batch, y_batch) 
         
     def get_batch(self):
         """
@@ -296,51 +346,53 @@ class keras_model():
 
 def main(run_string):
     ###### load training data
-    data = 'simple_tanh'
-    data_dir = '../../data/'
+    data = 'FIFA_2018_Statistics'
+    data_suffix = '_tr_1.csv'
+    data_dir = '../../data/kaggle/'
     data_prefix = data_dir + data
-    x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix)
+    x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
     batch_size = x_tr.shape[0]
     ###### get weight information
-    a1_size = 2
+    weights_dir = '../../data/'
+    a1_size = 4
     layer_sizes = [a1_size]
-    m_trainable_arr = [True, False]
-    b_trainable_arr = [False, False]
+    m_trainable_arr = [True, True]
+    b_trainable_arr = [True, True]
     num_inputs = tools.get_num_inputs(x_tr)
     num_outputs = tools.get_num_outputs(y_tr)
     num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-	###### check shapes of training data
-	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
-	###### setup keras model
-	model = kms.slp_model(num_inputs, num_outputs, layer_sizes)
+    ###### check shapes of training data
+    x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+    ###### setup keras model
+    model = kms.mlp_1_sm(num_inputs, num_outputs, layer_sizes)
     km = keras_model(model, x_tr, y_tr, batch_size)
-    loss = 'mse' 
+    loss = 'categorical_crossentropy' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
     km.setup_LL(loss)
     ###### test llhood output
     if "forward_test_linear" in run_string:
-    	forward_tests.forward_test_linear([km], num_weights)
+    	forward_tests.forward_test_linear([km], num_weights, weights_dir)
     ###### setup prior
-    prior_types = [7]
-	prior_hyperparams = [[-2., 2.]]
-	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-	dependence_lengths = get_degen_dependence_lengths(weight_shapes)
-	param_prior_types = [0]
-	prior = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
-	###### test prior output from nn setup
-	if "nn_prior_test" in run_string:
-		prior_tests.nn_prior_test(prior)
+    prior_types = [4]
+    prior_hyperparams = [[0., 1.]]
+    weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+    dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
+    param_prior_types = [0]
+    prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+    ###### test prior output from nn setup
+    if "nn_prior_test" in run_string:
+    	prior_tests.nn_prior_test(prior)
     ###### setup polychord
     nDerived = 0
     settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
     settings.base_dir = './keras_chains/'
-    settings.file_root = data
-    settings.nlive = 200
+    settings.file_root = data + "_mlp_1_sm"
+    settings.nlive = 1000
     ###### run polychord
     if "polychord1" in run_string:
     	PyPolyChord.run_polychord(km, num_weights, nDerived, settings, prior, polychord_tools.dumper)
 
 if __name__ == '__main__':
-	run_string = ''
+	run_string = 'polychord1'
 	main(run_string)
 
 

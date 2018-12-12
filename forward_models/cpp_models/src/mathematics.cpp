@@ -1,6 +1,7 @@
 /* external codebases */
 #include <cmath>
 #include <limits>
+#include <Eigen/Dense>
 
 /* in-house code */
 #include "mathematics.hpp"
@@ -91,3 +92,6 @@ double const_pi() {
     return atan(1)*4; 
 }
 
+Eigen::MatrixXd softmax(Eigen::MatrixXd x) {
+    return x.array().exp().colwise() / x.array().exp().rowwise().sum();
+}

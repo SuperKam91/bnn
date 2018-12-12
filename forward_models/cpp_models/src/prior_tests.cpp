@@ -9,8 +9,8 @@
 
 //test prior set up (externally) for forward propagation of nn. cube should be manually set to have same dimensionality as nn
 void nn_prior_test(bool print_out) {
-	double cube[] = {0.1, 0.9};
-	double theta[2];
+	double cube[] = {0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7};
+	double theta[30];
 	Eigen::Map<Eigen::VectorXd> cube_m(cube, e_n_weights);
     Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_weights);
     e_ip(cube_m, theta_m);

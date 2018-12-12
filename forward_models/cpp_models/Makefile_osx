@@ -11,9 +11,13 @@ CXXFLAGS += -pg -O0 -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor
 #CXXFLAGS += -O3 -DEIGEN_NO_DEBUG -DEIGEN_DONT_PARALLELIZE
 
 # Profiling
-CXXFLAGS += -g
+#CXXFLAGS += -g
+
+# Optimised profiling
+
+#CXXFLAGS += -g -O3 -DEIGEN_NO_DEBUG -DEIGEN_DONT_PARALLELIZE
 
 # Shared object
-CXXFLAGS += -fPIC
+#CXXFLAGS += -fPIC
 
 LDFLAGS = -L/usr/local/Cellar/gcc/8.2.0/lib/gcc/8

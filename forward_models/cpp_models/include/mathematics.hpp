@@ -10,3 +10,4 @@ double relu(double);
 
 double const_pi(); 
 
+Eigen::MatrixXd softmax(Eigen::MatrixXd x);

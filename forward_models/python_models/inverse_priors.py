@@ -9,8 +9,10 @@ class inverse_prior:
 		"""
 		prior_types are form of prior functions, given by the following index:
 		0: univariate-uniform
-		1: univariate-gaussian
-		TODO
+		1: univariate-positive log-uniform
+		.
+		.
+		.
 		prior_hyperparams are the hyperparameters for each prior function specified
 		in prior_types,
 		dependence_lengths specify groups of dependent parameters in contiguous memory.
@@ -24,6 +26,10 @@ class inverse_prior:
 		dependence_lengths and param_prior_types should be the same length
 		NOTE if all parameters are independent and use same prior, set dependence_lengths and
 		prior_param_types to have length = 1 
+		NOTE I believe that for a given layer, only one weight/bias per node needs to be ordered (w.r.t. its equivalent in the other nodes) 
+		to prevent degeneracy between nodes. current implementation doesn't exploit this efficiency, treats each weight/bias as ordered
+		(w.r.t. equiv. in other nodes)
+		NOTE also the degeneracy does not occur on the output layer, only the hidden layers. current implementation also doesn't account for this.
 		"""
 		self.prior_types = prior_types
 		self.prior_hyperparams = prior_hyperparams
@@ -51,7 +57,7 @@ class inverse_prior:
 		#e.g. with a separate array specifying which parameters are dependent (dependence_array)
 
 	def get_ppf_objs(self):
-		for i, p_type in enumerate(prior_types):
+		for i, p_type in enumerate(self.prior_types):
 			prior_hyperparam1 = self.prior_hyperparams[i][0]
 			prior_hyperparam2 = self.prior_hyperparams[i][1]
 			if p_type == 0:

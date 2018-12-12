@@ -50,11 +50,11 @@ def main(run_string):
     npm.setup_LL(ll_type)
     ###### test llhood output
     if "k_forward_test_linear" in run_string:
-        forward_tests.forward_test_linear([km])
+        forward_tests.forward_test_linear([km], num_weights, data_dir)
     if "tf_forward_test_linear" in run_string:
-        forward_tests.forward_test_linear([tfm])
+        forward_tests.forward_test_linear([tfm], num_weights, data_dir)
     if "np_forward_test_linear" in run_string:
-        forward_tests.forward_test_linear([npm])
+        forward_tests.forward_test_linear([npm], num_weights, data_dir)
     ###### setup prior
     prior_types = [7]
     prior_hyperparams = [[-2., 2.]]

@@ -19,3 +19,12 @@ https://matrices.io/training-a-deep-neural-network-using-only-tensorflow-c/
 - For C++ numerical libraries, for cpu-only I will try Eigen, if I require gpu or multi-cpu/gpu I will try arrayfire, viennacl, blaze-lib or thrust. 
 Note other parallel alternatives described here:
 https://arrayfire.com/benchmarking-parallel-vector-libraries/
+
+- Could look at using keras layers or models in tensorflow, to speed up keras implementation. the following may be useful:
+https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
+https://github.com/keras-team/keras/issues/3223
+
+- See here for how to use Keras models to draw decision boundary for two-dimensional problems:
+https://jonchar.net/notebooks/Artificial-Neural-Network-with-Keras/
+
+- HPC user guide for new systems: https://docs.hpc.cam.ac.uk/hpc/index.html

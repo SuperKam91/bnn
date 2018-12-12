@@ -7,7 +7,7 @@
 #include "externs.hpp"
 
 
-void run_polychord_wrap() {
+void run_polychord_wrap(bool profiling) {
     //some of default settings changed to sensible values by kj
     int nDims, nDerived;
     nDims = static_cast<int>(e_n_weights);
@@ -16,7 +16,7 @@ void run_polychord_wrap() {
     Settings settings(nDims,nDerived);
 
     //default nlive is 50
-    settings.nlive         = 200;
+    settings.nlive         = 1000;
     settings.num_repeats   = settings.nDims*5;
     //set to true by kj
     settings.do_clustering = true;    
@@ -26,25 +26,38 @@ void run_polychord_wrap() {
     settings.logzero = -1e30;
 
     settings.base_dir      = e_chains_dir;
-    settings.file_root     = e_data;
+    settings.file_root     = e_data + "_slp_sm_10";
     //just write .txt output for now, kj
-    settings.write_resume  = false;
-    settings.read_resume   = false;
+    settings.write_resume  = true;
+    settings.read_resume   = true;
     settings.write_live    = false;
     settings.write_dead    = false;
     //added by kj
     settings.write_prior = false;
     //changed by kj
-    settings.write_stats   = true;
-    // settings.write_stats   = false;
+    if (profiling) {
+        settings.write_stats   = false;
+    }
+    else {
+        settings.write_stats   = true;        
+    }
 
     settings.equals        = false;
     //changed by kj
-    settings.posteriors    = true;
+    if (profiling) {
+        settings.posteriors    = false;
+    }
+    else {
+        settings.posteriors    = true;
+    }
     // settings.posteriors    = false;
     settings.cluster_posteriors = false;
-
-    settings.feedback      = 1;
+    if (profiling) {
+        settings.feedback     = 0; //suppress output for profiling    
+    }
+    else {
+        settings.feedback      = 1;        
+    }
     settings.compression_factor  = 0.36787944117144233;
 
     //don't boost posterior kj
@@ -58,7 +71,7 @@ void run_polychord_wrap() {
 double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
 {
     Eigen::Map<Eigen::VectorXd> w_m(theta, e_n_weights);
-    return e_slp_nn(w_m);
+    return e_nn(w_m);
 }
 
 

@@ -11,6 +11,9 @@ forward_models/cpp_models/include/other
 forward_models/cpp_models/src/test
 forward_models/cpp_models/include/test
 ### ignore pyc files
-.pyc
+forward_models/python_models/*.pyc
 ### ignore ipynb checkpoint files
 .ipynb_checkpoints
+### ignore profiling directories
+forward_models/python_models/profiling
+forward_models/cpp_models/profiling

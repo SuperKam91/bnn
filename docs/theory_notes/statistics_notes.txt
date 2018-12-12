@@ -22,6 +22,8 @@ lasso regression: strictly regularised regression (include 'subject to' term in 
 
 ridge regression: regularisation to reduce conditioning (sensitivity to inputs) of system.
 
+quantile regression: attempts to estimate median or another quantile of the regression variables, rather than the expected value in least squares. Solved used linear programming instead of linear algebra, and in particular by using the simplex method. 
+
 active subspaces: identify dimensions in which scalar valued function changes the most by inspecting gradient of function w.r.t its variables. Active subspace is formed of linear combinations of original dimensions. Directions orthogonal to active subspace are known as inactive subspace. Can be used as a dimensionality reduction tool. Can be used to approximate original function as follows. First determine the active subspace, and sample along its range. Next for each sample in the active subspace, sample the function along the inactive subspace. Finally, take the conditional average of the samples in the inactive subspace (given a point in the active subspace). Differs from PCA in the sense that PCA works on a vector of data (and transforms to a basis where each dimension is uncorrelated).
 
 Bayesian model averaging (BMA): Bayesian model selection usually involves picking the 'best' model by comparing Bayes factors. In BMA if some model-independent quantity y is to be obtained from considering various models M_i and data x, then it is given by the weighted average p[y | d] = sum_i p[M_i | d] p[y | M_i, d] thus each p[y | M_i, d] is weighted by the probability of the model (given the data).
@@ -71,3 +73,7 @@ adapative mcmc: Change nature of Markov chain in some way as the chain is run, n
 zig-zag mcmc: non-reversible mcmc method where trajectory is governed by differential equation in time. The trajectory then switches direction (changes sign) according to a probability related to gradient of target.
 
 dirchlet distribution: multi-variate generalisation of beta distribution, seems to be product of polynomials.
+
+perfect separation (classification): one of the independent variables can be used to perfectly classify the training data. Means MLE doesn't have unique solution, as regression coefficient associated with perfect estimator goes to infinity.
+
+variational autoencoder: learn vectors of mean and standard deviation, which are sampled to produce encoding. more robust to noise in data than vanilla autoencoders, I believe.

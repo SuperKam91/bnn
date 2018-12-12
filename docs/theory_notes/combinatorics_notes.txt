@@ -1,0 +1,47 @@
+n^k
+
+- The number of ways of picking k objects from n distinguishable objects with replacement. The order of the r objects is important, not just what they are (permutations).
+Example: Visualising an icecream with toppings. There are three icecream topping flavours: r, b, g (so n = 3). Suppose we need to pick three toppings to add to icecream (k = 2), and clearly the order makes a difference to how the ice cream looks depending on what topping is added when. For the first topping we could have either r, b or g, the same goes for the second topping. So there are 3^2=9 possibilities. 
+
+Equivalent to putting k distinguishable balls into n distinguishable urns, with no limit on number of balls in each urn. Not accounting for order in which the balls lay in each urn, or the order in which the balls are picked.
+
+n! / (n-k)!
+
+- The number of ways of picking k objects from n distinguishable objects without replacement. The order of the r objects is important, not just what they are (permutations).
+Example: Visualising an icecream with toppings. There are three icecream topping flavours: r, b, g. Suppose we need to pick three toppings to add to icecream but we can only choose each topping once. Clearly the order makes a difference to how the ice cream looks depending on what topping is added when. There are three choices for the first topping, then two for the second topping. Thus there are 3*2=6 possibilities 
+
+Equivalent to putting k distinguishable balls into n distinguishable urns, where each urn can hold a maximum of one ball. Not accounting for the order in which the balls are picked.
+
+(k+n-1, k) = (k+n-1)! / [k!(n-1)!]
+
+- The number ways of picking r objects from n distinguishable objects with replacement. The order of the r objects is unimportant, all that matters is which r of the n were picked (combinations).
+Example: Cost of an icecream with toppings. There are three icecream topping flavours which have costs: c (cheap), d (decent), e (expensive). Suppose we need to pick two toppings to add to icecream. Clearly the order makes no difference to how much the ice cream will cost. There are three choices for each topping selection, but since order is irrelevant, {c,d} = {d,c} etc. Thus there are 4!/[2!2!]=6 possibilities.
+
+Equivalent to putting k indistinguishable balls into n distinguishable urns, where each urn can hold any number of balls. Not accounting for order in which the balls lay in the urn, or the order in which the balls are picked.
+Also equivalent to stars and bars theorem two: partitioning n indistinguishable stars with k-1 indistinguishable bars, and allowing for bars to be at ends of stars, and for multiple bars to be next to each other.
+
+(n, k) = n!/[(n-k)!k!]
+
+- The number ways of picking r objects from n distinguishable objects without replacement. The order of the r objects is unimportant, all that matters is which r of the n were picked (combinations). 
+Example: Cost of an icecream with toppings. There are three icecream topping flavours which have costs: c (cheap), d (decent), e (expensive). Suppose we need to pick two toppings to add to icecream, but can only add each one a maximum of one time. Clearly the order makes no difference to how much the ice cream will cost. There are three choices for the first topping, then two for the second. Since order is irrelevant, {c,d} = {d,c} etc. Thus there are 3!/[1!2!]=3 possibilities.
+
+Equivalent to putting k indistinguishable balls into n distinguishable urns, where each urn can hold a maximum of one ball. Not accounting for order in which the balls lay in the urn, or the order in which the balls are picked.
+
+Also equivalent to putting n distinguishable balls into two distinguishable boxes, where one box (i.e. first) contains r balls, while the other (i.e. second) contains n-r balls. Not accounting for order in which the balls lay in the box, or the order in which the balls are picked.
+
+Also equivalent to number of ways to arrange k (indistinguishable with one another) elements and n-k (indistinguishable with one another) elements b in an ordered set. This is commonly what is meant when people say "pick k from n". Makes no sense to consider unordered sets in this context, as the answer would always be 1.
+Example n=3, k=2, the possible ordered sets are: {a,a,b}, {a,b,a}, {b,a,a}.
+
+(n, k_1, k_2, ..., k_m) = n!/[k_1!k_2!...k_m!]
+
+- The number ways of picking k_1 objects from n distinguishable objects without replacement, then selecting k_2 without replacement from the remaining n-k_1 distinguishable objects, ..., then selecting k_l without replacement from the remaining n-k_1-k_2-...-k_{l-1} distinguishable objects, leaving the final k_m distinguishable objects. For a given k_i the order of the k_i objects is unimportant, all that matters is which of the n are picked in that k_i (combinations). 
+Example: Cost of buying multiple icecreams with toppings. There are four icecream topping flavours which have costs: c (cheap), d (decent), e (expensive), f (flipping expensive). Suppose we need to pick two toppings for one icecream, and one for each of the others. Suppose further we can only add each topping a maximum of one time. Clearly the order makes no difference to how much the ice cream will cost, so a possible outcome is {e,c}, {d}, {f}. Thus there are 4!/[2!1!1!]=12 possibilities.
+
+Equivalent to putting n distinguishable balls into m distinguishable boxes, where box i must hold k_i balls. Not accounting for order in which the balls lay in the box, or the order in which the balls are picked.
+
+Also equivalent to number of ways to arrange k_1 (indistinguishable with one another) elements a_1, k_2 (indistinguishable with one another) elements a_2, ..., k_l (indistinguishable with one another) elements a_l and k_m (indistinguishable with one another) elements a_m in an ordered set. This is commonly what is meant when people say "pick k_1, k_2, ..., k_l from n". Makes no sense to consider unordered sets in this context, as the answer would always be 1.
+Example n=4, k_1=2, k_2=1, k_3=1, set a_1=a, a_2=b, a_3=c, the possible ordered sets are: {a,a,b,c}, {a,a,c,b}, {b,c,a,a}, {c,b,a,a}, {a,b,c,a}, {a,c,b,a}, {b,a,a,c}, {c,a,a,b}, {a,b,a,c}, {a,c,a,b}, {b,a,c,a}, {c,a,b,a}.
+
+Also equivalent to the number of permutations of a word with n letters in total, with m distinct letters, each of which appearing k_i times.
+Example MISSISSIPPI, n=11, m=4, k_1 = 1 (M), k_2 = 4 (I), k_3 = 4 (S), k_4 = 2 (P). Thus the number of permutations = 11! /[1!4!4!2!] = 34650.
+

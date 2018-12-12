@@ -19,8 +19,6 @@ std::vector<double> column_file_2_vec(const uint & num_data, const std::string &
     uint i = 0;
     while ((std::getline(indata, line)) && (i < num_data)) {
         values.push_back(std::stod(line));
-        // std::cout << "i counter in w read" << std::endl;
-        // std::cout << i << std::endl;
         ++i;
     }
     indata.close();

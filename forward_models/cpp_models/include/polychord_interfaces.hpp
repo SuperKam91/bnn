@@ -47,7 +47,7 @@ double loglikelihood (double theta[], int nDims, double phi[], int nDerived);
 void prior (double cube[], double theta[], int nDims);
 void dumper(int,int,int,double*,double*,double*,double, double);
 void setup_loglikelihood();
-void run_polychord_wrap();
+void run_polychord_wrap(bool);
 
 void run_polychord( 
         double (*c_loglikelihood_ptr)(double*,int,double*,int), 

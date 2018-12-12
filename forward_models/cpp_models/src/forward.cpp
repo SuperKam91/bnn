@@ -31,7 +31,8 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
 	b_c(1.), 
 	rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
-    nn_ptr(nn_ptr_) {
+    nn_ptr(nn_ptr_),
+    LL_dim(batch_size * num_outputs) {
 }
 
 //constructor for frozen layers
@@ -56,7 +57,8 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     b_c(1.), 
     rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
-    nn_ptr(nn_ptr_) {
+    nn_ptr(nn_ptr_),
+    LL_dim(batch_size * num_outputs) {
 }
 
 //constructor for frozen weight matrices or bias vectors
@@ -81,8 +83,8 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     b_c(1.), 
     rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
-    nn_ptr(nn_ptr_) {
-}
+    nn_ptr(nn_ptr_),
+    LL_dim(batch_size * num_outputs) {}
 
 //in python we infer input/output/m from data files. however, here it is easier to input these manually
 //so that vectors holding data from files can be allocated sufficient size before reading from files
@@ -121,6 +123,13 @@ std::vector<double> forward_prop::file_2_vec(const uint & num_data, const uint &
 
 std::vector<uint> forward_prop::get_weight_shapes() { 
 	std::vector<uint> weight_s;
+    if (layer_sizes.size() == 0) {
+        weight_s.push_back(num_inputs);
+        weight_s.push_back(num_outputs);
+        weight_s.push_back(1);
+        weight_s.push_back(num_outputs);
+        return weight_s;
+    }
     weight_s.reserve((layer_sizes.size() + 1) * 2); //+1 for output layer, *2 for biases
     uint w_rows = num_inputs;
     weight_s.push_back(w_rows);
@@ -152,6 +161,15 @@ std::vector<uint> forward_prop::get_weight_shapes() {
 //more or less copied from get_weight_shapes 1 std::vector<bool> arg in tools.cpp
 std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trainable_v) {
     std::vector<uint> weight_s;
+    if (layer_sizes.size() == 0) {
+        if (trainable_v.at(0)) {
+            weight_s.push_back(num_inputs);
+            weight_s.push_back(num_outputs);
+            weight_s.push_back(1);
+            weight_s.push_back(num_outputs);
+        }
+        return weight_s;
+    }
     uint w_rows = num_inputs;
     uint w_cols;
     uint b_rows = 1;
@@ -182,6 +200,17 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
 //more or less copied from get_weight_shapes 2 std::vector<bool> args in tools.cpp
 std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trainable_w_v, const std::vector<bool> & trainable_b_v) {
     std::vector<uint> weight_s;
+    if (layer_sizes.size() == 0) {
+        if (trainable_w_v.at(0)) {
+            weight_s.push_back(num_inputs);
+            weight_s.push_back(num_outputs);
+        }
+        if (trainable_b_v.at(0)) {      
+            weight_s.push_back(1);
+            weight_s.push_back(num_outputs);
+        }
+        return weight_s;
+    }
     uint w_rows = num_inputs;
     uint w_cols;
     uint b_rows = 1;
@@ -213,7 +242,7 @@ std::vector<uint> forward_prop::get_weight_shapes(const std::vector<bool> & trai
     return weight_s;    
 }
 
-std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > forward_prop::get_weight_matrices(Eigen::Ref<Eigen::VectorXd> w){
+std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > forward_prop::get_weight_matrices(Eigen::Ref<Eigen::VectorXd> w) {
     uint start_index = 0;
     //assumes all matrices are 2d
     const unsigned long int num_matrices = weight_shapes.size() / 2; //.size() returns long uint, so make num_matrices this to get rid of warning
@@ -253,12 +282,23 @@ void forward_prop::get_batches(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dyna
 void forward_prop::setup_LL(std::string LL_type_) {
     LL_type = LL_type_;
     if (LL_type == "gauss") {
-        const uint LL_dim = m * num_outputs;
         LL_ptr = calc_gauss_ll;
         LL_norm = -0.5 * LL_dim * (std::log(2. * M_PI) + std::log(LL_var));
     }
     else if (LL_type == "categorical_crossentropy") {
         LL_ptr = calc_ce_ll;
+        LL_norm = 0.;
+    }
+    else if (LL_type == "av_gauss") {
+        LL_ptr = calc_av_gauss_ll;
+        LL_norm = -0.5 * LL_dim * (std::log(2. * M_PI) + std::log(LL_var) + std::log(LL_dim));
+    }
+    else if (LL_type == "av_categorical_crossentropy") {
+        LL_ptr = calc_av_ce_ll;
+        LL_norm = 0.;
+    }
+    else if (LL_type == "dummy") {
+        LL_ptr = calc_d_ll;
         LL_norm = 0.;
     }
     else {
@@ -274,7 +314,7 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
     Eigen::MatrixXd pred; 
     if (m == batch_size) {
         pred = nn_ptr(x_tr_m, weight_matrices);
-        LL = LL_ptr(y_tr_m, pred, LL_var, LL_norm);      
+        LL = LL_ptr(y_tr_m, pred, LL_var, LL_norm, LL_dim, batch_size);      
     }
     else if (m > batch_size) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
@@ -282,10 +322,42 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
         // acts on x_tr_b and y_tr_b
         get_batches(x_tr_b, y_tr_b);
         pred = nn_ptr(x_tr_b, weight_matrices);
-        LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm);
+        LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
     }
     else {
         std::cout << "batch size can't be bigger than m. Please create another forward obj to rectify this" << std::endl;
     }
     return LL;
 }
+
+void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
+    double LL;
+    std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w);
+    Eigen::MatrixXd pred;
+    std::cout << "one-d weights:" << std::endl;
+    std::cout << w << std::endl;
+    if (m == batch_size) {
+        std::cout << "input batch:" << std::endl;   
+        std::cout << x_tr_m << std::endl;
+        std::cout << "output batch:" << std::endl;
+        std::cout << y_tr_m << std::endl;
+        pred = nn_ptr(x_tr_m, weight_matrices);
+        LL = LL_ptr(y_tr_m, pred, LL_var, LL_norm, LL_dim, batch_size);   
+    }
+    else if (m > batch_size) {
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
+        get_batches(x_tr_b, y_tr_b);
+        std::cout << "input batch:" << std::endl;
+        std::cout << x_tr_b << std::endl;
+        std::cout << "output batch:" << std::endl;
+        std::cout << y_tr_b << std::endl;
+        pred = nn_ptr(x_tr_b, weight_matrices);
+        LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
+    }
+    std::cout << "nn output:" << std::endl;
+    std::cout << pred << std::endl;
+    std::cout << "log likelihood:" << std::endl;
+    std::cout << LL << std::endl;
+    }
+

@@ -1,9 +1,10 @@
 ### ignore build and bin files
 forward_models/cpp_models/build
 forward_models/cpp_models/bin
-### ignore scratchpad
+### ignore scratchpads
 forward_models/cpp_models/src/scratch
 forward_models/cpp_models/include/scratch
+forward_models/python_models/scratch
 ### ignore 'other' stuff
 forward_models/cpp_models/src/other
 forward_models/cpp_models/include/other
@@ -17,3 +18,15 @@ forward_models/python_models/*.pyc
 ### ignore profiling directories
 forward_models/python_models/profiling
 forward_models/cpp_models/profiling
+### ignore chains files, too big to commit/pull
+forward_models/python_models/keras_chains/
+forward_models/python_models/np_chains/
+forward_models/python_models/tf_chains/
+forward_models/cpp_models/cpp_chains/
+### ignore plot files, too big to commit/pull
+forward_models/python_models/keras_plots/
+forward_models/python_models/np_plots/
+forward_models/python_models/tf_plots/
+forward_models/cpp_models/cpp_plots/
+### ignore mnist datasets for now
+MPE_examples/autoencoders/MNIST_data/

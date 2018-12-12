@@ -1,3 +1,6 @@
+#for some reason if you import scipy.stats before tf, get ImportError on scipy.stats import
+import inverse_priors
+
 #########commercial modules
 import numpy as np
 import tensorflow as tf
@@ -7,10 +10,12 @@ import tf_graphs as tfgs
 import tools
 import PyPolyChord
 import PyPolyChord.settings
-import priors
 import polychord_tools
-import output
 import input_tools
+import prior_tests
+import forward_tests
+import np_models as npms
+
 
 class tf_model():
 	def __init__(self, tf_graph, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr = [], b_trainable_arr = []):
@@ -28,10 +33,12 @@ class tf_model():
 		self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
 		self.get_weight_shapes(layer_sizes, m_trainable_arr, b_trainable_arr) 
 		self.weights_ph = tuple([tf.placeholder(dtype=tf.float64, shape=weight_shape) for weight_shape in self.weight_shapes]) #think feed_dict keys have to be immutable
+		#n.b. if use uneven batch_sizes, need to change first dim to None
 		self.x_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_inputs])
 		self.y_ph = tf.placeholder(dtype=tf.float64, shape=[self.batch_size, self.num_outputs])
 		self.pred = tf_graph(self.x_ph, self.weights_ph)
 		self.LL_var = 1.
+		self.instance_sess = tf.Session() 
 
 	def get_weight_shapes(self, layer_sizes, m_trainable_arr, b_trainable_arr):
 		"""
@@ -61,14 +68,23 @@ class tf_model():
 		    self.batch_generator = self.create_batch_generator()
 		if fit_metric == 'chisq':
 		    #temporary
-		    LL_dim = self.batch_size * self.num_outputs
-		    self.LL_const = -0.5 * LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+		    self.LL_dim = self.batch_size * self.num_outputs
+		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 		    self.LL = self.calc_gauss_LL()
 		    #longer term solution (see comments above)
 		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
 		elif fit_metric == 'categorical_crossentropy':
 		    self.LL_const = 0.
 		    self.LL = self.calc_cross_ent_LL()
+		elif fit_metric == 'av_chisq':
+		    self.LL_dim = self.batch_size * self.num_outputs
+		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+		    self.LL = self.calc_av_gauss_LL()
+		    #longer term solution (see comments above in keras_forward)
+		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
+		elif fit_metric == 'av_categorical_crossentropy':
+		    self.LL_const = 0.
+		    self.LL = self.calc_av_cross_ent_LL()
 		else:
 		    raise NotImplementedError
 
@@ -79,19 +95,39 @@ class tf_model():
 	    not using explicit tf functions seems to speed up process
 	    """
 	    diff = self.pred - self.y_ph
-	    sq_diff = diff * diff
-	    chi_sq = -1. / (2. * self.LL_var) * tf.reduce_sum(sq_diff)
+	    chi_sq = -1. / self.LL_var * tf.nn.l2_loss(diff)
+	    return self.LL_const + chi_sq 
+
+	def calc_av_gauss_LL(self):
+	    """
+		adapted from non-average version.
+		see np_forward.py implementation for more
+		details concerning 'average'.
+	    """
+	    diff = self.pred - self.y_ph
+	    chi_sq = -1. / (self.LL_var * self.LL_dim) * tf.nn.l2_loss(diff)
+
 	    return self.LL_const + chi_sq 
 
 	def calc_cross_ent_LL(self):
 	    """
 	    calc cross entropy and flip sign to get llhood
 	    n.b. tf.losses.softmax_cross_entropy first applies softmax to pred before calculating
-	    cross entropy, then takes average over m.
-	    pred should be of shape (m, num_classes), y should be of shape (m, num_classes) where each of the m elements
+	    cross entropy, then takes average over batch_size.
+	    pred should be of shape (batch_size, num_classes), y should be of shape (batch_size, num_classes) where each of the m elements
 	    should be a one-hot vector (as is case with keras)
 	    """
-	    return - self.m * tf.losses.softmax_cross_entropy(self.y_ph, self.pred)
+	    return - self.batch_size * tf.losses.softmax_cross_entropy(self.y_ph, self.pred)
+
+	def calc_av_cross_ent_LL(self):
+		"""
+		adapted from non-average version.
+		see np_forward.py implementation for more
+		details concerning 'average'.	 
+		"""
+		self.LL_const = -1. * tf.log(tf.reduce_sum(tf.reduce_prod(tf.nn.softmax(self.pred)**(1. / self.batch_size), axis = 0)))
+		# self.LL_const = -1 * np.log(np.sum(np.prod(npms.softmax(self.pred)**(1. / self.batch_size), axis = 0)))
+		return - tf.losses.softmax_cross_entropy(self.y_ph, self.pred) + self.LL_const
 
 	def __call__(self, oned_weights):
 		"""
@@ -104,8 +140,23 @@ class tf_model():
 		"""
 		x_batch, y_batch = self.get_batch()
 		weights = self.get_tf_weights(oned_weights)
-		pred, LL = tf.Session().run([self.pred, self.LL], feed_dict={self.x_ph: x_batch, self.y_ph: y_batch, self.weights_ph: weights})
+		LL = self.instance_sess.run(self.LL, feed_dict={self.x_ph: x_batch, self.y_ph: y_batch, self.weights_ph: weights})
 		return LL
+
+	def test_output(self, oned_weights):
+		print "one-d weights:"
+		print oned_weights
+		weights = self.get_tf_weights(oned_weights)
+		x_batch, y_batch = self.get_batch()
+		print "input batch:"
+		print x_batch
+		print "output batch:"
+		print y_batch
+		pred, LL = self.instance_sess.run([self.pred, self.LL], feed_dict={self.x_ph: x_batch, self.y_ph: y_batch, self.weights_ph: weights})
+		print "nn output:"
+		print pred
+		print "log likelihood:"
+		print LL 
 
 	def get_tf_weights(self, new_oned_weights):
 		"""
@@ -169,40 +220,40 @@ class tf_model():
 	        batches.append(batch)
 	    return batches
 
-
-
 def main(run_string):
 	###### load training data
-	data = 'simple_tanh'
-	data_dir = '../../data/'
+	data = 'FIFA_2018_Statistics'
+	data_suffix = '_tr_1.csv'
+	data_dir = '../../data/kaggle/'
 	data_prefix = data_dir + data
-	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix)
+	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
 	batch_size = x_tr.shape[0]
 	###### get weight information
-	a1_size = 2
-	layer_sizes = [a1_size]
-	m_trainable_arr = [True, False]
-	b_trainable_arr = [False, False]
+	weights_dir = '../../data/'
+	a1_size = 0
+	layer_sizes = []
+	m_trainable_arr = [True]
+	b_trainable_arr = [True]
 	num_inputs = tools.get_num_inputs(x_tr)
 	num_outputs = tools.get_num_outputs(y_tr)
 	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-    ###### check shapes of training data
-    x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+	###### check shapes of training data
+	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
 	#setup tf graph
-	tf_graph = tfgs.slp_graph
+	tf_graph = tfgs.slp
 	tfm = tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
-	fit_metric = 'chisq'
+	fit_metric = 'av_categorical_crossentropy' # 'chisq', 'av_chisq', 'categorical_crossentropy', 'av_categorical_crossentropy'
 	tfm.setup_LL(fit_metric)
 	###### test llhood output
-    if "forward_test_linear" in run_string:
-    	forward_tests.forward_test_linear([tfm], num_weights)
+	if "forward_test_linear" in run_string:
+		forward_tests.forward_test_linear([tfm], num_weights, weights_dir)
 	###### setup prior
-    prior_types = [7]
-	prior_hyperparams = [[-2., 2.]]
-	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-	dependence_lengths = get_degen_dependence_lengths(weight_shapes)
+	prior_types = [4]
+	prior_hyperparams = [[0., 1.]]
+	weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
 	param_prior_types = [0]
-	prior = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+	prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
 	###### test prior output from nn setup
 	if "nn_prior_test" in run_string:
 		prior_tests.nn_prior_test(prior)
@@ -210,12 +261,12 @@ def main(run_string):
 	nDerived = 0
 	settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
 	settings.base_dir = './tf_chains/'
-	settings.file_root = data
+	settings.file_root = data + '_slp_sm'
 	settings.nlive = 200
 	###### run polychord
-    if "polychord1" in run_string:
-    	PyPolyChord.run_polychord(npm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+	if "polychord1" in run_string:
+		PyPolyChord.run_polychord(tfm, num_weights, nDerived, settings, prior, polychord_tools.dumper)
 
 if __name__ == '__main__':
-	run_string = ''
+	run_string = 'forward_test_linear'
 	main(run_string)

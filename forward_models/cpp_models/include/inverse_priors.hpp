@@ -149,6 +149,7 @@ public:
 	inverse_prior(std::vector<uint>, std::vector<double>, std::vector<uint>, std::vector<uint>, uint);
 	~inverse_prior();
 	void prior_call_by_dependence_lengths(Eigen::Ref<Eigen::VectorXd> & cube_m, Eigen::Ref<Eigen::VectorXd> & theta_m);
+	void prior_call_ind_same(Eigen::Ref<Eigen::VectorXd> & cube_m, Eigen::Ref<Eigen::VectorXd> & theta_m);
 	void operator()(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 protected:
 	//member variables
@@ -157,7 +158,9 @@ protected:
 	std::vector<uint> dependence_lengths;
 	std::vector<uint> param_prior_types;
 	uint n_dims;
-	//member methods
 	std::vector<base_prior *> ppf_ptr_v;
+	// unfortunately when I make prior_call_ptr a member variable, get Error in `bin/main': munmap_chunk(): invalid pointer
+	// when program exits 
+	//member methods
 	std::vector<base_prior *> get_ppf_ptr_vec();
 };
