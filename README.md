@@ -3,23 +3,16 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 # anyvision stuff
 
-- Look into Generative adversarial networks (GANs)
-- Look at Surrey face model datasets
-- Consider looking at pix2pix; turns outlines into real images
+- Look into Generative adversarial networks (GANs), both unsupervised and semi-supervised. Also look at Bayesian version
+- Look at infinitely long single node ResNet nns
+- Look at hyperspherical energy paper
 
-# issues
-
-- Strange behaviour in weights in cpp_chains/FIFA_2018_Statistics_slp_sm_10.txt. After first run ended (can't remember if it terminated cleanly), was a total of 22023 samples. 22022 had weight 0.01492 and -2*LL 18.42, 22023 had weight 0.00602 and -2*LL 18.48, then when resuming run, 22024 had weight 0.01491 and -2*LL 18.425. final sample had weight 0.01749 and -2*LL 14.933
-# timeline
+# other stuff
 
 - Implement support for stochastic hyperparameters (prior and likelihood)
 - Compare Bayesian and MLP estimates for small datasets, where using small networks compatible with PolyChord 1 is justifiable. e.g. Boston housing dataset regression, or FIFA World Cup 2018 classification.  
-- Look into tradeoff of using tensorflow with gpu support vs c++ implemented nns (possibly incorporating parallelisation) vs cython
 
 # background reading
-
-- Bayesian sparse reconstruction: a brute-force approach to astronomical imaging and machine learning
-https://arxiv.org/abs/1809.04598
 
 - Theses which focus on bnns and their applications, to draw inspiration from: http://mlg.eng.cam.ac.uk/yarin/blog_2248.html#thesis (Gal, 2016), www.cs.ubc.ca/~nando/papers/thesis.pdf (Freitas, 1999), http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.446.9306&rep=rep1&type=pdf (Neal, 1995), http://www.inference.org.uk/mackay/PhD.html (Mackay, 1991) 
 
@@ -67,6 +60,9 @@ https://arxiv.org/pdf/1512.05287.pdf (2016),
 https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
+
+- Look at success of global average pooling layers (GAP). Premise is for an input layer of size (num_batches, height, width, depth), take average value over height and width to return a tensor with shape (num_batches, 1, 1, depth). Useful for e.g. drastically reducing size of any subsequent fully connected layers. See:
+https://alexisbcook.github.io/2017/global-average-pooling-layers-for-object-localization/
 
 - Transfer learning is a potential opportunity: train all but final layer using MLE methods (or use pre-trained weights) to e.g. learn featuring generating nodes. Train final layer(s) with BNN to learn accurate representation of non-linear combination of these learned features, and some uncertainty. Problem is, previous layers cannot be too big, or even training the final layers will not be possible. Unfortunately this will often be the case with CNNs, as the number of channels usually increases with depth into the NN (as the CNN learns a larger number of intricate features as one delves into the NN).
 
