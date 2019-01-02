@@ -62,7 +62,7 @@ https://arxiv.org/pdf/1511.03243.pdf (2015),
 https://arxiv.org/pdf/1512.05287.pdf (2016),
 https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
-- papers on reverse Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
+- papers on restricted Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
 
 # thoughts scratchpad
 
