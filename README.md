@@ -9,8 +9,11 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 # other stuff
 
+- Run MLP bnns on fifa dataset using HPC
+- Look at y_pred posteriors for test data for SLP bnn results
+- Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord
 - Implement support for stochastic hyperparameters (prior and likelihood)
-- Compare Bayesian and MLP estimates for small datasets, where using small networks compatible with PolyChord 1 is justifiable. e.g. Boston housing dataset regression, or FIFA World Cup 2018 classification.  
+- Look for more interesting small dataset problems from e.g. kaggle
 
 # background reading
 
