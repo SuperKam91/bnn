@@ -62,6 +62,8 @@ https://arxiv.org/pdf/1511.03243.pdf (2015),
 https://arxiv.org/pdf/1512.05287.pdf (2016),
 https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
+- papers on reverse Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
+
 # thoughts scratchpad
 
 - Look at success of global average pooling layers (GAP). Premise is for an input layer of size (num_batches, height, width, depth), take average value over height and width to return a tensor with shape (num_batches, 1, 1, depth). Useful for e.g. drastically reducing size of any subsequent fully connected layers. See:
