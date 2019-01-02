@@ -9,6 +9,7 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 # other stuff
 
+- Look at typical dimensionality of sequential/recurrent nns
 - Run MLP bnns on fifa dataset using HPC
 - Look at y_pred posteriors for test data for SLP bnn results
 - Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord
