@@ -1,9 +1,12 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
-
+  
 # Interesting datasets
 - gresearch financial forecasting challenge: https://financialforecasting.gresearch.co.uk/
-- Kaggle FIFA WC 18 dataset: https://www.kaggle.com/mathan/fifa-2018-match-statistics
+- Kaggle: https://www.kaggle.com/
+- driven data (similar to kaggle): https://www.drivendata.org/competitions/
+- innocentive (ditto): https://www.innocentive.com/
+- tunedit (ditto): http://tunedit.org/challenges/
 - UCI database of datasets, includes counts of number of records and number of features, as well as papers which cite the datasets: https://archive.ics.uci.edu/ml/datasets.html?sort=nameUp&view=list
 
 # anyvision stuff
