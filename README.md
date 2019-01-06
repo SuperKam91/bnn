@@ -7,8 +7,9 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 - driven data (similar to kaggle): https://www.drivendata.org/competitions/
 - innocentive (ditto): https://www.innocentive.com/
 - tunedit (ditto): http://tunedit.org/challenges/
+- openml (ditto): www.openml.org
 - UCI database of datasets, includes counts of number of records and number of features, as well as papers which cite the datasets: https://archive.ics.uci.edu/ml/datasets.html?sort=nameUp&view=list
-- www.openml.org
+
 
 # anyvision stuff
 
