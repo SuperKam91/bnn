@@ -13,8 +13,13 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 # anyvision stuff
 
-- Look into Generative adversarial networks (GANs), both unsupervised and semi-supervised. Also look at Bayesian version
-- Look at infinitely long single node ResNet nns
+- Bayesian GANs have been shown to give superior performance due to their tendency not to get stuck in local optima, which occurs in GAN training when the generative model finds an 'easy' solution which fools the discriminator.
+
+- ResNets with one neuron per layer have been shown to satisfy their own universal approximation theorem, meaning they can approximate a function (with certain restrictions) to an arbitrary level of precision, as the length of the network approaches infinity. Since it is of Resnet architecture, each layer should be the same size dimension as the input layer. 
+However looking at the Wikipedia example (a_2 = g(z_1 + a_0)), this can arise in two ways. if a_0 has size 1 x n, a_1 can be forced to have the same size if a_1 = w_1 * a_0 + b_1 with w_1 having size 1 x 1, or it can be given by a_1 = a_0 * w_1 + b_1 with w_1 having size n x n. Thus odd indexed layers have dimensionality 1 + n or n * n + n and the even layers have no learned parameters.
+In the universal approximation paper, the architecture and dimensions seem somewhat different, and describes it in terms of 'blocks'. It appears that a_2 is given by a_2 = w_2 * g(a_0 * w_1 + b_1) + a_0 with w_1 having size n x 1 and w_2 1 x n. It is interesting that the second layer doesn't have a bias, or an activation. I assume the output of each block is used as the input to the next. The final layer is a linear (potentially multi-neuron) layer. Thus each block has 2*n + 1 parameters.
+I think the original ResNet paper is the same as this.
+
 - Look at hyperspherical energy paper
 
 # other stuff
@@ -25,6 +30,30 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 - Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord
 - Implement support for stochastic hyperparameters (prior and likelihood)
 - Look for more interesting small dataset problems from e.g. kaggle
+
+# summaries of other large scale works on bnns
+
+- Mackay uses Gaussian approximation to get solutions to BNNs. Picks maximum likelihood value of hyperparameters (using analytical solution I believe), then looks at evidence values and training set error to evaluate models. Think he finds that test set performance and evidence are positively correlated, and that evidence as a function of size of neural network increases then dips at overly complex models. *CHECK*
+
+- *PROVIDE SUMMARY OF KEY RESULTS FROM MACKAY
+
+- Neal uses HMC to sample the BNN parameters, and Gibbs sampling to sample the hyperparameters. n.b. HMC requires gradient information, so can't be used to sample hyperparameters directly (to my knowledge). Also, HMC in essence has characteristics similar to common optimisation methods which use 'momentum' and 'velocity'.
+
+- Neal also introduces concept of using Gaussian processes to introduce a prior over functions, which tells us what nn predicts mapping function to be without any data.
+
+- From Neal it seems that sampling hyperparameters seems rather necessary to justify allowing NN to be arbitrarily big- if complex model is not needed, hyperparameters will 'quash' nodes which aren't important, according to the hyperparameter values assigned by the data during the training, and 'upweight' important nodes. Also avoids cross validation step.
+
+- *PROVIDE SUMMARY OF KEY RESULTS FROM NEAL
+
+- Freitas uses reversible jump MCMC with particle filters / sequential Monte Carlo to sample high dimensional neural network systems. Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
+
+- *PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
+
+- Gal provides the genius insight that stochastic draws from the distribution over neural networks can be done using traditional methods. Usually if using dropout regularisation, one disables the dropout once training is finished. Gal shows that using dropout during model deployment is equivalent to using variational inference to get a probabilistic model output. The parameters of the variational inference problem are determined by the dropout properties I believe. The higher the dropout probability, the stronger the prior on the inference problem.
+
+- This essentially means a Bayesian approach can be used even for high dimensional problems, the training time is the same as that of maximisation methods, and during deployment, one is only limited by how many samples from the posterior one wants.
+
+- Gal finds that this method exceeds traditional variational inference methods both in terms of speed and test set performance for most tasks, with the only doubts occurring in some CNNs. He also finds it outperforms traditional methods in terms of test set performance, with the added bonus that one gets an uncertainty estimate. The method however cannot give evidence estimates.
 
 # background reading
 
@@ -87,14 +116,6 @@ https://alexisbcook.github.io/2017/global-average-pooling-layers-for-object-loca
 - Seems that there are applications in ML in areas such as medicine, where number of training data is small. Thus one is forced to use small networks to prevent overfitting. See bullet below.
 
 - https://reader.elsevier.com/reader/sd/pii/S0933365716301749?token=D3ADCF7EC51CE6EBC44A540012EAAFB1F5D8CFC8BA12B847B380A83E838D1F4444E61168F6FA06D9F43A5D794D04504D describes a regression problem with five input features and 35 records. Use a one layer NN (~40 parameters), but train over 20000 NNs (with different parameter initialisations, and different randomisations of data for stochastic gradient descent), and pick NN with best performance on cross-validation set, for their final evaluation. Use RMSE and R^2 regression coefficient to evaluate performance, and get values RMSE = 0.85 and R^2 = 0.983 for final evaluation. I believe they run the algorithms for ~30 epochs.
-
-- Mackay uses Gaussian approximation to get solutions to BNNs. Picks maximum likelihood vlaue of hyperparameters (using analytical solution I believe), then looks at evidence values and training set error to evaluate models.
-
-- Neal uses HMC to sample the BNN parameters, and Gibbs sampling to sample the hyperparameters. n.b. HMC requires gradient information, so can't be used to sample hyperparameters directly (to my knowledge). Also, HMC in essence has characteristics similar to common optimisation methods which use 'momentum' and 'velocity'.
-
-- Neal also introduces concept of using Gaussian processes to introduce a prior over functions, which tells us what nn predicts mapping function to be without any data.
-
-- sampling hyperparameters seems rather necessary to justify allowing NN to be arbitrarily big- if complex model is not needed, hyperparameters will 'quash' nodes which aren't important, according to the hyperparameter values assigned by the data during the training, and 'upweight' important nodes. Also avoids cross validation step.
 
 - seems BNNs are useful in approximating Q(s,a) function in RL- rather than approximating maximum of Q(s,a) for values of states and actions, better to have a probability distribution over each Q(s,a), so a can be sampled. Sample from each Q(s,a) for a given state, and choose a corresponding to highest Q value. The stochasticity introduced in sampling a supposedly helps the exploration of the algorithm. see: https://www.coursera.org/learn/practical-rl/lecture/okvvc/thompson-sampling
 
