@@ -33,9 +33,9 @@ I think the original ResNet paper is the same as this.
 
 # summaries of other large scale works on bnns
 
-- Mackay uses Gaussian approximation to get solutions to BNNs. Picks maximum likelihood value of hyperparameters (using analytical solution I believe), then looks at evidence values and training set error to evaluate models. Think he finds that test set performance and evidence are positively correlated, and that evidence as a function of size of neural network increases then dips at overly complex models. *CHECK*
+- Mackay uses Gaussian approximation to get solutions to BNNs. Picks value of hyperparameters using a form of evidence (using analytical solution I believe), then looks at 'usual' evidence values and training set error to evaluate models. Think he finds that test set performance and evidence are positively correlated, and that evidence as a function of size of neural network increases then dips at overly complex models.
 
-- *PROVIDE SUMMARY OF KEY RESULTS FROM MACKAY
+- finds when a rubbish model used, evidence and test error not as correlated as when good model is used. Further, the evidence is low in some cases where test error is good. Uses this to deduce structure of model is wrong. Bayesian does better than traditional
 
 - Neal uses HMC to sample the BNN parameters, and Gibbs sampling to sample the hyperparameters. n.b. HMC requires gradient information, so can't be used to sample hyperparameters directly (to my knowledge). Also, HMC in essence has characteristics similar to common optimisation methods which use 'momentum' and 'velocity'.
 
@@ -43,7 +43,7 @@ I think the original ResNet paper is the same as this.
 
 - From Neal it seems that sampling hyperparameters seems rather necessary to justify allowing NN to be arbitrarily big- if complex model is not needed, hyperparameters will 'quash' nodes which aren't important, according to the hyperparameter values assigned by the data during the training, and 'upweight' important nodes. Also avoids cross validation step.
 
-- *PROVIDE SUMMARY OF KEY RESULTS FROM NEAL
+- Uses stochastic/mini-batch methods.
 
 - Freitas uses reversible jump MCMC with particle filters / sequential Monte Carlo to sample high dimensional neural network systems. Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
 
