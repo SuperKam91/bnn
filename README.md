@@ -45,6 +45,14 @@ I think the original ResNet paper is the same as this.
 
 - Uses stochastic/mini-batch methods.
 
+- Neal's result (with same simple model as Mackay) on test data is similar to the Mackay best evidence model's results, but not as good as his best test error model results. Performance didn't necessarily get worse with larger networks for BNNs, but did for MAP estimates (though don't think this treated hyperparameters as stochastic).
+
+- n.b. hyperparams in first layer indicate which inputs to network are important. using it generalises to test data better, as irrelevant attributes fit to noise in train.
+
+- larger network is, more uncertain it is to out of training distribution data.
+
+- for bh, BNN does much better on test error than traditional (though I don't think this uses cross validation in traditional sense).
+
 - Freitas uses reversible jump MCMC with particle filters / sequential Monte Carlo to sample high dimensional neural network systems. Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
 
 - *PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
