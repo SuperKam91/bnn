@@ -57,9 +57,9 @@ I think the original ResNet paper is the same as this.
 
 - Also uses SMC to train NNs where data arrives one at a time. Idea is to model joint distribution of model parameters at each timestep, and appears to do a better job of predicting it with more time/data.
 
-- Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
+- Also does model selection, using posterior over number of basis functions. Can do this in sequential context as well. 
 
-- *PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
+*PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
 
 - Gal provides the genius insight that stochastic draws from the distribution over neural networks can be done using traditional methods. Usually if using dropout regularisation, one disables the dropout once training is finished. Gal shows that using dropout during model deployment is equivalent to using variational inference to get a probabilistic model output. The parameters of the variational inference problem are determined by the dropout properties I believe. The higher the dropout probability, the stronger the prior on the inference problem.
 
