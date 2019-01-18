@@ -55,7 +55,7 @@ I think the original ResNet paper is the same as this.
 
 - Freitas uses reversible jump MCMC to sample neural network systems. reversible jump MCMC is necessary when number of parameters changes. This is the case here, as the number of radial basis functions (neurons) is allowed to vary in the analysis, resulting in a varying number of model parameters/hyperparameters throughout the sampling. Gives posteriors on number of functions, as well as the usual param/hyperparams ones.
 
-- Also uses SMC to train NNs where data arrives one at a time. Idea is to model joint distribution of outputs at each timestep, and appears to do a better job of predicting it with more time/data.
+- Also uses SMC to train NNs where data arrives one at a time. Idea is to model joint distribution of model parameters at each timestep, and appears to do a better job of predicting it with more time/data.
 
 - Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
 
