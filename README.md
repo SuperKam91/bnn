@@ -53,7 +53,11 @@ I think the original ResNet paper is the same as this.
 
 - for bh, BNN does much better on test error than traditional (though I don't think this uses cross validation in traditional sense).
 
-- Freitas uses reversible jump MCMC with particle filters / sequential Monte Carlo to sample high dimensional neural network systems. Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
+- Freitas uses reversible jump MCMC to sample neural network systems. reversible jump MCMC is necessary when number of parameters changes. This is the case here, as the number of radial basis functions (neurons) is allowed to vary in the analysis, resulting in a varying number of model parameters/hyperparameters throughout the sampling. Gives posteriors on number of functions, as well as the usual param/hyperparams ones.
+
+- Also uses SMC to train NNs where data arrives one at a time. Idea is to model joint distribution of parameters at each timestep.
+
+- Also does model selection. Claims that SMC can converge to global maximum faster than gradient descent based methods. Also treats hyperparameters as stochastic.
 
 - *PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
 
