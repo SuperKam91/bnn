@@ -59,7 +59,7 @@ I think the original ResNet paper is the same as this.
 
 - Also does model selection, using posterior over number of basis functions. Can do this in sequential context as well. 
 
-*PROVIDE SUMMARY OF KEY RESULTS FROM FREITAS
+- Finds reversible jump MCMC does as well as Mackay and Neal, and better than expectation maximisation algorithm (which is similar/equivalent to variational inference), but is slower than EM algo.
 
 - Gal provides the genius insight that stochastic draws from the distribution over neural networks can be done using traditional methods. Usually if using dropout regularisation, one disables the dropout once training is finished. Gal shows that using dropout during model deployment is equivalent to using variational inference to get a probabilistic model output. The parameters of the variational inference problem are determined by the dropout properties I believe. The higher the dropout probability, the stronger the prior on the inference problem.
 
