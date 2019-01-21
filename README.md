@@ -19,6 +19,7 @@ Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 However looking at the Wikipedia example (a_2 = g(z_1 + a_0)), this can arise in two ways. if a_0 has size 1 x n, a_1 can be forced to have the same size if a_1 = w_1 * a_0 + b_1 with w_1 having size 1 x 1, or it can be given by a_1 = a_0 * w_1 + b_1 with w_1 having size n x n. Thus odd indexed layers have dimensionality 1 + n or n * n + n and the even layers have no learned parameters.
 In the universal approximation paper, the architecture and dimensions seem somewhat different, and describes it in terms of 'blocks'. It appears that a_2 is given by a_2 = w_2 * g(a_0 * w_1 + b_1) + a_0 with w_1 having size n x 1 and w_2 1 x n. It is interesting that the second layer doesn't have a bias, or an activation. I assume the output of each block is used as the input to the next. The final layer is a linear (potentially multi-neuron) layer. Thus each block has 2*n + 1 parameters.
 I think the original ResNet paper is the same as this.
+In paper, ResNet does better than wider NN for simple example (both are tested up to 5 layers).
 
 - Look at hyperspherical energy paper
 
