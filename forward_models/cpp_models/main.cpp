@@ -23,10 +23,10 @@
 //but easier to do this in python and fill in values here manually
 //data parameters
 //-----------------------------------------------------------------------------
-const uint g_n_inputs = 14;
-const uint g_n_outputs = 2;
-const uint g_m = 48;
-const uint g_b_size = 48; 
+const uint g_n_inputs = 13;
+const uint g_n_outputs = 1;
+const uint g_m = 253;
+const uint g_b_size = 253; 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
@@ -36,12 +36,12 @@ const std::vector<bool> g_trainable_b_v = {true};
 //external as it is needed by forward_test and polychord_interface
 const uint e_n_weights = calc_num_weights(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
 std::vector<uint> g_weight_shapes = get_weight_shapes(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
-#define g_NEURAL_NETWORK slp_sm 
+#define g_NEURAL_NETWORK slp 
 //-----------------------------------------------------------------------------
 //i/o files. see polychord_interfaces.cpp for specifying chains file_root
 //----------------------------------------------------------------------------
-const std::string e_data_dir = "../../data/kaggle/";
-const std::string e_data = "FIFA_2018_Statistics";
+const std::string e_data_dir = "../../data/uci/";
+const std::string e_data = "bh_50";
 const std::string g_x_path = e_data_dir + e_data + "_x_tr_10.csv";
 const std::string g_y_path = e_data_dir + e_data + "_y_tr_10.csv";
 const std::string e_chains_dir = "./cpp_chains/";
@@ -69,7 +69,7 @@ int main() {
 	bool polychord1_run = true;
 	bool profiling = false;
 	//setup ll, can't do this outside of function
-	e_nn.setup_LL("categorical_crossentropy"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
+	e_nn.setup_LL("gauss"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	std::chrono::time_point<std::chrono::high_resolution_clock> finish;
 	if (profiling) {

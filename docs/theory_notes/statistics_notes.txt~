@@ -75,3 +75,7 @@ zig-zag mcmc: non-reversible mcmc method where trajectory is governed by differe
 dirchlet distribution: multi-variate generalisation of beta distribution, seems to be product of polynomials.
 
 perfect separation (classification): one of the independent variables can be used to perfectly classify the training data. Means MLE doesn't have unique solution, as regression coefficient associated with perfect estimator goes to infinity.
+
+variational autoencoder: learn vectors of mean and standard deviation, which are sampled to produce encoding. more robust to noise in data than vanilla autoencoders, I believe.
+
+semi-supervised learning: have input data with known labels, and input data with unknown labels. idea is to train nn that works on both of these types of data. generally have two components to loss function, one part classifying data with labels, and one part evaluating unlabelled data. for example with a semi-supervised gan, you use discrminator to discrminiate between real unlabelled data and generated data, while classifying the labelled data to one of the classes. for a k-classification the discriminator therefore classifies to k+1 labels: the k classes, or whether the data is fake. 

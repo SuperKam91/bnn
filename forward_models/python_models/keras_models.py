@@ -31,13 +31,37 @@ def mlp_test(num_inputs, num_outputs, layer_sizes):
     return model
 
 def slp_sm(num_inputs, num_outputs, layer_sizes):
+	"""
+	basic regression architecture using single layer perceptron
+	(softmax activation)
+	"""
 	a0 = Input(shape = (num_inputs,))
 	prediction = Dense(num_outputs, activation='softmax')(a0)
 	return Model(inputs = a0, outputs = prediction)
 
 def slp_sm_r(num_inputs, num_outputs, layer_sizes, reg_coeffs):
+	"""
+	as above but regularised
+	"""
 	a0 = Input(shape = (num_inputs,))
 	prediction = Dense(num_outputs, activation='softmax', kernel_regularizer = Regularisers.l2(reg_coeffs[0]), bias_regularizer = Regularisers.l2(reg_coeffs[1]))(a0)
+	return Model(inputs = a0, outputs = prediction)
+
+def slp(num_inputs, num_outputs, layer_sizes):
+	"""
+	basic regression architecture using single layer perceptron
+	(linear activation)
+	"""
+	a0 = Input(shape = (num_inputs,))
+	prediction = Dense(num_outputs, activation='linear')(a0)
+	return Model(inputs = a0, outputs = prediction)
+
+def slp_r(num_inputs, num_outputs, layer_sizes, reg_coeffs):
+	"""
+	as above but regularised
+	"""
+	a0 = Input(shape = (num_inputs,))
+	prediction = Dense(num_outputs, activation='linear', kernel_regularizer = Regularisers.l2(reg_coeffs[0]), bias_regularizer = Regularisers.l2(reg_coeffs[1]))(a0)
 	return Model(inputs = a0, outputs = prediction)
 
 def mlp_1_sm(num_inputs, num_outputs, layer_sizes):

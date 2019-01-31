@@ -152,3 +152,21 @@ def make_param_names_file(param_names, filename):
 	with open(filename, 'w') as f:
 	    for name, latex in param_names:
 	        f.write('%s   %s\n' % (name, latex))
+
+def get_pred_param_names(num_outputs):
+	"""
+	get param names for pred chains file
+	"""
+	param_names = []
+	for i in range(num_outputs):
+		param_names.append(('p%i' %(i+1), 'y_{p,%i}' %(i+1)))
+	return param_names
+
+def make_pred_param_names(num_outputs, base_dir, file_root):
+	"""
+	make pred .paramnames file from scratch.
+	note file is saved to base_dir/file_root.paramnames
+	"""
+	param_names = get_pred_param_names(num_outputs)
+	param_f = base_dir + file_root + '.paramnames'
+	make_param_names_file(param_names, param_f)

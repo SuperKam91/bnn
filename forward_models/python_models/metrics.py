@@ -14,7 +14,7 @@ many other scoring metrics are available in sklearn.metrics, see:
 https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules
 """
 
-def mean_squared_error(y_true, y_pred, discretise):
+def mean_squared_error(y_true, y_pred, discretise = False):
 	"""
 	requires input arrays to be same np.dtype.
 	returns average, not sum of errors.
@@ -25,11 +25,10 @@ def mean_squared_error(y_true, y_pred, discretise):
 		y_p = tools.round_probabilities(y_pred)
 	else:
 		y_p = y_pred
-	y_t = y_true
-	mse_a = tf.Session().run(tf.keras.losses.mean_squared_error(y_t, y_p))
+	mse_a = tf.Session().run(tf.keras.losses.mean_squared_error(y_true, y_p))#
 	return mse_a.mean()
 
-def mean_absolute_error(y_true, y_pred, discretise):
+def mean_absolute_error(y_true, y_pred, discretise = False):
 	"""
 	requires input arrays to be same np.dtype.
 	returns average, not sum of errors
@@ -40,8 +39,7 @@ def mean_absolute_error(y_true, y_pred, discretise):
 		y_p = tools.round_probabilities(y_pred)
 	else:
 		y_p = y_pred
-	y_t = y_true
-	mae_a = tf.Session().run(tf.keras.losses.mean_absolute_error(y_t, y_p))
+	mae_a = tf.Session().run(tf.keras.losses.mean_absolute_error(y_true, y_p))
 	return mae_a.mean()
 
 def binary_crossentropy(y_true, y_pred, discretise = False):

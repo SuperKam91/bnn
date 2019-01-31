@@ -26,7 +26,7 @@ void run_polychord_wrap(bool profiling) {
     settings.logzero = -1e30;
 
     settings.base_dir      = e_chains_dir;
-    settings.file_root     = e_data + "_slp_sm_10";
+    settings.file_root     = e_data + "_slp_10";
     //just write .txt output for now, kj
     settings.write_resume  = true;
     settings.read_resume   = true;

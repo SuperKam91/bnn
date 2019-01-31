@@ -14,6 +14,7 @@ import polychord_tools
 import input_tools
 import prior_tests
 import forward_tests
+import output_tools
 
 class keras_model():
     """
@@ -346,27 +347,27 @@ class keras_model():
 
 def main(run_string):
     ###### load training data
-    data = 'FIFA_2018_Statistics'
+    data = 'bh_50'
     data_suffix = '_tr_1.csv'
-    data_dir = '../../data/kaggle/'
+    data_dir = '../../data/uci/'
     data_prefix = data_dir + data
     x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
     batch_size = x_tr.shape[0]
     ###### get weight information
     weights_dir = '../../data/'
-    a1_size = 4
-    layer_sizes = [a1_size]
-    m_trainable_arr = [True, True]
-    b_trainable_arr = [True, True]
+    a1_size = 0
+    layer_sizes = [] #if using slp, leave this list empty
+    m_trainable_arr = [True]
+    b_trainable_arr = [True]
     num_inputs = tools.get_num_inputs(x_tr)
     num_outputs = tools.get_num_outputs(y_tr)
     num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
     ###### check shapes of training data
     x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
     ###### setup keras model
-    model = kms.mlp_1_sm(num_inputs, num_outputs, layer_sizes)
+    model = kms.slp(num_inputs, num_outputs, layer_sizes)
     km = keras_model(model, x_tr, y_tr, batch_size)
-    loss = 'categorical_crossentropy' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
+    loss = 'squared_error' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
     km.setup_LL(loss)
     ###### test llhood output
     if "forward_test_linear" in run_string:
@@ -385,14 +386,16 @@ def main(run_string):
     nDerived = 0
     settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
     settings.base_dir = './keras_chains/'
-    settings.file_root = data + "_mlp_1_sm"
+    settings.file_root = data + "slp_1"
     settings.nlive = 1000
     ###### run polychord
     if "polychord1" in run_string:
     	PyPolyChord.run_polychord(km, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+    if "writeparamnames" in run_string:
+        output_tools.write_paramnames(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr, 'bh_50_slp_1', False, False, True, False)
 
 if __name__ == '__main__':
-	run_string = 'polychord1'
+	run_string = 'forward_test_linear'
 	main(run_string)
 
 

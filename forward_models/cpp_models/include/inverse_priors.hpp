@@ -75,6 +75,33 @@ protected:
 	double gamma;
 };
 
+class delta_prior: public base_prior {
+public:
+	delta_prior(double, double);
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+protected:
+	double value;
+	double sigma; //sigma is a redundant variable here, just included for consistency
+};
+
+class gamma_prior: public base_prior {
+public:
+	gamma_prior(double, double);
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+protected:
+	double a;
+	double b; //convention for b propto 1 / scale_param used as in python implementation
+};
+
+class sqrt_recip_gamma_prior: public gamma_prior {
+public:
+	using gamma_prior::gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
 Eigen::VectorXd forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m);
 
 void forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> t_m);
@@ -140,6 +167,28 @@ public:
 class sorted_cauchy_prior: public cauchy_prior {
 public:
 	using cauchy_prior::cauchy_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
+//pointless but included for consistency as in python implementation
+class sorted_delta_prior: public delta_prior {
+public:
+	using delta_prior::delta_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
+class sorted_gamma_prior: public gamma_prior {
+public:
+	using gamma_prior::gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
+class sorted_sqrt_rec_gam_prior: public sqrt_recip_gamma_prior {
+public:
+	using sqrt_recip_gamma_prior::sqrt_recip_gamma_prior;
 	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
 	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 };

@@ -113,6 +113,103 @@ def get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_
 		weight_shapes.append((num_outputs,))
 	return weight_shapes	
 
+def calc_num_weights_layers(weight_shapes):
+	"""
+	calculate total number of (trainable) weights (and biases) in each layer, 
+	"""
+	#no hidden layers
+	if len(weight_shapes) == 2:
+		return [np.prod(weight_shapes[0]) + weight_shapes[1][0]]
+	n_layer_weights = []
+	for i in range(len(weight_shapes) / 2):
+		n_layer_weights.append(np.prod(weight_shapes[2 * i]) + weight_shapes[2 * i + 1][0])
+	return n_layer_weights
+
+def calc_num_weights_layers2(weight_shapes, trainable_arr):
+	"""
+	accounts for fact layers may not be trainable.
+	in this case, same as calc_num_weights_layers
+	"""
+	return calc_num_weights_layers(weight_shapes) 
+
+def calc_num_weights_layers3(weight_shapes, m_trainable_arr, b_trainable_arr):
+	"""
+	accounts for fact that some biases or weight matrices may not be trainable
+	"""
+	n_layer_weights = []
+	j = 0
+	for i in range(len(m_trainable_arr)):
+		if m_trainable_arr[i] and b_trainable_arr[i]:
+			n_layer_weights.append(np.prod(weight_shapes[j]) + weight_shapes[j + 1][0])
+			j += 2
+		elif m_trainable_arr[i]:
+			n_layer_weights.append(np.prod(weight_shapes[j]))
+			j += 1
+		elif b_trainable_arr[i]:
+			n_layer_weights.append(weight_shapes[j][0])
+			j += 1
+	return n_layer_weights
+
+def calc_num_weights(num_inputs, layer_sizes, num_outputs):
+	"""
+	calculate total number of weights (and biases), 
+	i.e. the dimensionality of the inference problem
+	"""
+	#no hidden layers
+	if len(layer_sizes) == 0:
+		return (num_inputs + 1) * num_outputs
+	n = (num_inputs + 1) * layer_sizes[0]
+	for i in range(1, len(layer_sizes)):
+		n += (layer_sizes[i-1] + 1) * layer_sizes[i] 
+	n += (layer_sizes[-1] + 1) * num_outputs
+	return n
+
+def calc_num_weights2(num_inputs, layer_sizes, num_outputs, trainable_arr):
+	"""
+	accounts for fact that layers may not be trainable 
+	"""
+	n = 0
+	if len(layer_sizes) == 0:
+		if trainable_arr[0]:
+			return (num_inputs + 1) * num_outputs
+		else:
+			return n
+	if trainable_arr[0]:
+		n += (num_inputs + 1) * layer_sizes[0]
+	for i in range(1, len(layer_sizes)):
+		if trainable_arr[i]:	
+			n += (layer_sizes[i-1] + 1) * layer_sizes[i] 
+	if trainable_arr[-1]:
+		n += (layer_sizes[-1] + 1) * num_outputs
+	return n
+
+def calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr):
+	"""
+	accounts for fact that certain weight matrices / bias vectors may not be
+	trainable
+	"""
+	n = 0
+	if len(layer_sizes) == 0:
+		if m_trainable_arr[0]:
+			n += num_inputs * num_outputs
+		if b_trainable_arr[0]:
+			n += num_outputs
+		return n			
+	if m_trainable_arr[0]:
+		n += num_inputs * layer_sizes[0]
+	if b_trainable_arr[0]:
+		n += layer_sizes[0]
+	for i in range(1, len(layer_sizes)):
+		if m_trainable_arr[i]:	
+			n += layer_sizes[i-1] * layer_sizes[i]
+		if b_trainable_arr[i]:
+			n += layer_sizes[i]
+	if m_trainable_arr[-1]:
+		n += layer_sizes[-1] * num_outputs
+	if b_trainable_arr[-1]:
+		n += num_outputs
+	return n
+
 def get_num_inputs(x):
 	return np.prod(x.shape[1:], dtype = int)
 
@@ -212,6 +309,25 @@ def get_degen_dependence_lengths4(weight_shapes, independent = False):
 		dependence_lengths.extend((weight_shapes[-2][0] + 1) * weight_shapes[-2][1] * [1]) #+1 is for biases. assumes 2nd dim of final two weight_shapes are same (should be)
 	return dependence_lengths
 
+def get_hyper_dependence_lengths(weight_shapes, granularity):
+	"""
+	calculates hyper dependence lengths from weight shapes based on granularity.
+	if granularity is single, means a single set (two) of hyperparams is used for
+	whole nn, so returns a list containing 1.
+	if granularity is layer, calculates number of params in each layer, and returns
+	a list of these values.
+	if granularity is input_size, calculates dependence_lengths as required in inverse_prior class,
+	as this gives the contiguous parameters which multiply the same input taken from the previous
+	layer. this is the granularity used in neal's ARD model, as it essentially determines which inputs
+	are relevant and which aren't
+	"""
+	if granularity == 'single':
+		return [1]
+	elif granularity == 'layer':
+		return calc_num_weights_layers(weight_shapes)
+	elif granularity == 'input_size':
+		return get_degen_dependence_lengths(weight_shapes)
+
 def round_probabilities(p):
 	"""
 	for given row, set element with highest value to one,
@@ -244,6 +360,25 @@ def check_dtypes(y_true, y_pred):
 	ensures both y_true and y_pred are numpy arrays of type np.float64.
 	if not some keras metric functions may screw up
 	"""
-	y_true = y_true.astype(np.float64, copy=False)
-	y_pred = y_pred.astype(np.float64, copy=False)
+	y_true = y_true.astype(np.float64, copy = False)
+	y_pred = y_pred.astype(np.float64, copy = False)
 	return y_true, y_pred
+
+def get_km_weight_magnitudes(km):
+	model_weight_arrs = km.get_weights()
+	weight_mags = []
+	for model_weight_arr in model_weight_arrs:
+		weight_mags.append(np.linalg.norm(model_weight_arr))
+	return weight_mags, np.linalg.norm(weight_mags)
+
+if __name__ == '__main__':
+	num_inputs = 2
+	layer_sizes = [3,2]
+	num_outputs = 2
+	m_trainable_arr = [True, True, True]
+	b_trainable_arr = [True, True, True]
+	print calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	print get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	print calc_num_weights_layers3(weight_shapes, m_trainable_arr, b_trainable_arr)
+	print get_degen_dependence_lengths(weight_shapes, independent = False)

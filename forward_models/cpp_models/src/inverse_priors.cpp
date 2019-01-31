@@ -99,6 +99,33 @@ void cauchy_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen:
 	theta_m = x0 + gamma * (M_PI * (p_m.array() - 0.5)).tan();
 }
 
+delta_prior::delta_prior(double value_, double sigma_) :
+	value(value_),
+	sigma(sigma_) {
+}
+
+Eigen::VectorXd delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	return Eigen::VectorXd::Constant(p_m.size(), value);
+}
+
+//test to ensure this doesn't reallocate theta_m to different memory location
+void delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	theta_m = Eigen::VectorXd::Constant(p_m.size(), value);
+}
+
+gamma_prior::gamma_prior(double a_, double b_) :
+	a(a_),
+	b(b_) {
+}
+
+Eigen::VectorXd gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	return x0 + gamma * (M_PI * (p_m.array() - 0.5)).tan();
+}
+
+void gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	theta_m = x0 + gamma * (M_PI * (p_m.array() - 0.5)).tan();
+}
+
 Eigen::VectorXd forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m) {
 	long int n = p_m.size();
 	Eigen::VectorXd t_m(n);

@@ -2,6 +2,8 @@
 import numpy as np
 import scipy.stats
 
+##############in-house modules
+
 ######one-dimensional prior distributions
 
 class inverse_prior:
@@ -23,7 +25,8 @@ class inverse_prior:
 		param_prior_types specifies function to use for each set of dependent parameters. note each value should be the
 		in the set of indices of prior_types, not the set of values that prior_types can take,
 		as it is used to index self.prior_ppfs.
-		dependence_lengths and param_prior_types should be the same length
+		dependence_lengths and param_prior_types should be the same length, as should prior_types and prior_hyperparams.
+		unless dependence_lengths indicated the params are independent, the sum of dependence_lengths should equal n_dims
 		NOTE if all parameters are independent and use same prior, set dependence_lengths and
 		prior_param_types to have length = 1 
 		NOTE I believe that for a given layer, only one weight/bias per node needs to be ordered (w.r.t. its equivalent in the other nodes) 
@@ -31,6 +34,10 @@ class inverse_prior:
 		(w.r.t. equiv. in other nodes)
 		NOTE also the degeneracy does not occur on the output layer, only the hidden layers. current implementation also doesn't account for this.
 		"""
+		if len(dependence_lengths) != 1:
+			assert np.sum(dependence_lengths) == n_dims, "in case of dependent parameters, sum of dependence_lengths should equal n_dims"
+		assert (len(prior_types) == len(prior_hyperparams)), "prior_types and prior_hyperparams should be the same length"
+		assert (len(dependence_lengths) == len(param_prior_types)), "dependence_lengths and param_prior_types should be the same length"
 		self.prior_types = prior_types
 		self.prior_hyperparams = prior_hyperparams
 		self.prior_ppfs = []
@@ -75,19 +82,27 @@ class inverse_prior:
 			elif p_type == 6:
 				self.prior_ppfs.append(cauchy_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 7:
-				self.prior_ppfs.append(sorted_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(delta_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 8:
-				self.prior_ppfs.append(sorted_pos_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(gamma_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 9:
-				self.prior_ppfs.append(sorted_neg_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 10:
-				self.prior_ppfs.append(sorted_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_pos_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 11:
-				self.prior_ppfs.append(sorted_gaussian_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_neg_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 12:
-				self.prior_ppfs.append(sorted_laplace_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 13:
+				self.prior_ppfs.append(sorted_gaussian_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 14:
+				self.prior_ppfs.append(sorted_laplace_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 15:
 				self.prior_ppfs.append(sorted_cauchy_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 16:
+				self.prior_ppfs.append(sorted_delta_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 17:
+				self.prior_ppfs.append(sorted_gamma_prior(prior_hyperparam1, prior_hyperparam2))
 
 	def prior_call_ind_same(self, hypercube):
 		self.params[:] = self.prior_ppfs[0](hypercube)
@@ -110,11 +125,9 @@ class inverse_prior:
 		rather than iterating with for loop
 		"""
 		start_ind = 0
-		func_count = 0
-		for dependence_length in self.dependence_lengths:
-			self.params[start_ind:start_ind + dependence_length] = self.prior_ppfs[self.param_prior_types[func_count]](hypercube[start_ind:start_ind + dependence_length])
+		for i, dependence_length in enumerate(self.dependence_lengths):
+			self.params[start_ind:start_ind + dependence_length] = self.prior_ppfs[self.param_prior_types[i]](hypercube[start_ind:start_ind + dependence_length])
 			start_ind += dependence_length
-			func_count += 1
 		return self.params
 
 class base_prior:
@@ -147,7 +160,7 @@ class uniform_prior(base_prior):
 
 class pos_log_uniform_prior(base_prior):
 	"""
-	log-uniform on [a,b], a > b > 0
+	log-uniform on [a,b], b > a > 0
 
 	"""
 	def __init__(self, a, b):
@@ -155,7 +168,7 @@ class pos_log_uniform_prior(base_prior):
 
 class neg_log_uniform_prior(pos_log_uniform_prior):
 	"""
-	log-uniform on -[b, a], a > b > 0
+	log-uniform on -[b, a], b > a > 0
 	"""
 	def __call__(self, p):
 		return -1. * pos_log_uniform_prior.__call__(self, p)
@@ -163,7 +176,7 @@ class neg_log_uniform_prior(pos_log_uniform_prior):
 class log_uniform_prior(pos_log_uniform_prior, neg_log_uniform_prior):
 	"""
 	assumes positive and negative parts of function
-	are symmetric (i.e. interval is [-b, a] union [a, b], a > b > 0 
+	are symmetric (i.e. interval is [-b, a] union [a, b], b > a > 0 
 	can be easily extended to asymmetric case.
 	might be able to make more efficient by defining own ppf function defined on
 	positive and negative domain i.e. works with un re-normalised probabilities.
@@ -194,6 +207,39 @@ class cauchy_prior(base_prior):
 	def __init__(self, mu, sigma):
 		self.rv = scipy.stats.cauchy(mu, sigma)
 
+class delta_prior(base_prior):
+	"""
+	doesn't need to inherit from base_prior,
+	and doesn't need sigma argument in init,
+	but have been included for consistency.
+	"""
+	def __init__(self, value, sigma = 0.):
+		self.value = value
+
+	def __call__(self, p):
+		vals = np.zeros_like(p)
+		vals.fill(self.value)
+		return vals
+
+class gamma_prior(base_prior):
+	def __init__(self, a, b):
+		"""
+		n.b. a and b are shape and scale parameters respectively
+		with a dictating how bell shaped the curve is (low a is exponential-like, high a is more bell shaped)
+		and b inversely proportional to spread.
+		1 / b is used as scipy.stats scale argument.
+		mu value is not given, and is assumed to be zero
+		"""
+		self.rv = scipy.stats.gamma(a = a, scale = 1. / b)
+
+class sqrt_recip_gamma_prior(gamma_prior):
+	"""
+	return sqrt(1 / sample) from gamma distribution, which can be used as 
+	standard deviation for conjugate distribution
+	"""
+	def __call__(self, p):
+		return np.sqrt(1. / gamma_prior.__call__(self, p))
+
 def forced_identifiability_transform(p):
 	"""
 	don't think this can be vectorised in python,
@@ -222,7 +268,6 @@ def forced_identifiability_transform2(p):
 	t[:-1] = p[:-1]**(1. / i) * t[1:]   
 	return t
 
-
 def forced_identifiability_transform3(p):
 	"""
 	second attempt at vectorising. 
@@ -238,7 +283,6 @@ def forced_identifiability_transform3(p):
 	t[0] = p[-1]**(1. / n)
 	t[1:] = p[-2::-1]**(1. / i) * t[:-1]
 	return t
-
 
 class sorted_uniform_prior(uniform_prior):
 	def __call__(self, p):
@@ -274,5 +318,26 @@ class sorted_cauchy_prior(cauchy_prior):
 	def __call__(self, p):
 		t = forced_identifiability_transform(p)
 		return cauchy_prior.__call__(self, t)
+
+class sorted_delta_prior(delta_prior):
+	"""
+	this prior doesn't really make sense, as it's just
+	the same as the normal delta prior. but have included
+	for consistency
+	"""
+	def __call__(self, p):
+		t = forced_identifiability_transform(p)
+		return delta_prior.__call__(self, t)
+
+class sorted_gamma_prior(gamma_prior):
+	def __call__(self, p):
+		t = forced_identifiability_transform(p)
+		return gamma_prior.__call__(self, t)
+	
+class sorted_sqrt_rec_gam_prior(sqrt_recip_gamma_prior):
+	def __call__(self, p):
+		t = forced_identifiability_transform(p)
+		return sqrt_recip_gamma_prior.__call__(self, t)
+
 
 

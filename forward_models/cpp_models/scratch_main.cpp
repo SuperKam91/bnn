@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <Eigen/Core>
+#include <gsl/gsl_sf_bessel.h>
 
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
@@ -36,9 +37,8 @@ double Exp(double x) // the functor we want to apply
 }
 
 int main() {
-	double e;
-	Exp_c Exp_i;
-	e = Exp_i(1);
-	Exp_i(1);
+	double x = 5.0;
+    double y = gsl_sf_bessel_J0 (x);
+    printf ("J0(%g) = %.18e\n", x, y);
 	return 0;
 }

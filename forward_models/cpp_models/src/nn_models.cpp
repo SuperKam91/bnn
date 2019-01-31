@@ -12,6 +12,12 @@ Eigen::MatrixXd slp_sm(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::
     return softmax(z1);
 }
 
+Eigen::MatrixXd slp(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    //I think row-wise implementations of activations in other nns is just for efficiency. here I will be more general and use col-wise
+    Eigen::MatrixXd z1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose());
+    return z1;
+}
+
 Eigen::MatrixXd mlp_test(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = (x * w[0]).array().tanh();
     Eigen::MatrixXd a2 = a1.rowwise().sum();

@@ -36,7 +36,7 @@ scratch_deps = $(patsubst %, $(build_dir)/%, $(notdir $(scratch_srcs:%.cpp=%.d))
 inc += -isystem$(external_dir) -I$(include_dir)
 LDSHARED = $(LD) -shared
 LDLIBS +=  -l$(libname) #not currently used
-LDFLAGS += -L$(lib_dir) -lchord 
+LDFLAGS += -L$(lib_dir) -lchord -lgsl -lgslcblas
 
 all: main
 extra: tags doc

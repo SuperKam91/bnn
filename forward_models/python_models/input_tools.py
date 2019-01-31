@@ -22,7 +22,8 @@ def get_chains_data(chains_file):
 	LL, and parameter values
 	"""
 	data = np.genfromtxt(chains_file)
-	return data[:,0] / data[:,0].sum(), -0.5 * data[:, 1], data[:, 2:]
+	weight_norm = data[:,0].sum()
+	return data[:,0] / weight_norm, -0.5 * data[:, 1], data[:, 2:], weight_norm
 
 def get_chains_data2(chains_file):
 	"""
