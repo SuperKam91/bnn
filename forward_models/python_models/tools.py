@@ -118,8 +118,9 @@ def calc_num_weights_layers(weight_shapes):
 	calculate total number of (trainable) weights (and biases) in each layer, 
 	"""
 	#no hidden layers
-	if len(weight_shapes) == 2:
-		return [np.prod(weight_shapes[0]) + weight_shapes[1][0]]
+	#don't think this bit is needed, but not tested yet. kj feb 19
+	# if len(weight_shapes) == 2:
+		# return [np.prod(weight_shapes[0]) + weight_shapes[1][0]]
 	n_layer_weights = []
 	for i in range(len(weight_shapes) / 2):
 		n_layer_weights.append(np.prod(weight_shapes[2 * i]) + weight_shapes[2 * i + 1][0])
@@ -375,8 +376,8 @@ if __name__ == '__main__':
 	num_inputs = 2
 	layer_sizes = [3,2]
 	num_outputs = 2
-	m_trainable_arr = [True, True, True]
-	b_trainable_arr = [True, True, True]
+	m_trainable_arr = [False, False, True]
+	b_trainable_arr = [False, True, False]
 	print calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
 	weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
 	print get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)

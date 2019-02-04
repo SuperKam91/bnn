@@ -1,5 +1,7 @@
 /* external codebase */
 #include <vector>
+#include <string>
+#include <iostream>
 
 /* in-house code */
 #include <tools.hpp>
@@ -200,6 +202,36 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int & num_inps, const
 	return weight_s;	
 }
 
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> & weight_s) { 
+	std::vector<unsigned int> n_layer_weights;
+    for (unsigned int i = 0; i < weight_s.size() / 4; ++i) {
+    	//first product is weight matrix size, second is bias vector size 
+        n_layer_weights.push_back(weight_s.at(4 * i) * weight_s.at(4 * i + 1) + weight_s.at(4 * i + 2) * weight_s.at(4 * i + 3));        
+    }
+    return n_layer_weights;
+}
+
+//weight_s incorporates that layers are missing, so can just original usual function
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> & weight_s, const std::vector<bool> & trainable_v) {
+	return calc_num_weights_layers(weight_s);	
+}
+
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> & weight_s, const std::vector<bool> & trainable_w_v, const std::vector<bool> & trainable_b_v) {
+	std::vector<unsigned int> n_layer_weights;
+	unsigned int j = 0;
+    for (unsigned int i = 0; i < trainable_w_v.size(); ++i) {
+    	if ((trainable_w_v.at(i)) && (trainable_b_v.at(i))) {
+    		n_layer_weights.push_back(weight_s.at(j) * weight_s.at(j + 1) + weight_s.at(j + 2) * weight_s.at(j + 3));
+    		j += 4;
+    	}
+    	else if ((trainable_w_v.at(i)) || (trainable_b_v.at(i))) {
+    		n_layer_weights.push_back(weight_s.at(j) * weight_s.at(j + 1));
+    		j += 2;	
+    	}
+    }
+    return n_layer_weights;
+}
+
 std::vector<unsigned int> get_degen_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const bool & independent) {
 	if (independent) {
 		std::vector<unsigned int> dependence_lengths = {1};
@@ -322,6 +354,25 @@ std::vector<unsigned int> get_degen_dependence_lengths4(const std::vector<unsign
 			}
 		}
 		return dependence_lengths;
+	}
+}
+
+std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const std::string & granularity) {
+	if (granularity == "single") {
+		std::vector<unsigned int> hyper_dependence_lengths = {1};
+		return hyper_dependence_lengths;
+	}
+	else if (granularity == "layer") {
+		return calc_num_weights_layers(weight_shapes);
+	}
+	else if (granularity == "input_size") {
+		bool indp = false;
+		return get_degen_dependence_lengths(weight_shapes, indp);
+	}
+	else { //this is just to get rid of warning about not returning anything in case of other conditionals not being satisfied
+		std::cout << "granularity not valid. returning null vector" << std::endl;
+		std::vector<unsigned int> hyper_dependence_lengths;
+		return hyper_dependence_lengths;
 	}
 }
 

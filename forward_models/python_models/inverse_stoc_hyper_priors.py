@@ -178,7 +178,9 @@ class inverse_stoc_hyper_prior:
 
 	def __call__(self, hypercube):
 		self.hyperprior_call(hypercube[:self.n_stoc])
+		print "det hyperparams"
 		print self.hyperparams
+		print "stoc hyperparams"
 		print self.stoc_hyperparams
 		return self.prior_call(hypercube[self.n_stoc:])
 
@@ -198,6 +200,7 @@ class inverse_stoc_hyper_prior:
 
 	def prior_call_ind_same(self, hypercube):
 		self.params[:] = self.prior_ppfs[0](hypercube, self.hyperparams, self.stoc_hyperparams)
+		print "params"
 		print self.params
 		return self.params
 
@@ -221,6 +224,7 @@ class inverse_stoc_hyper_prior:
 		for i, dependence_length in enumerate(self.dependence_lengths):
 			self.params[start_ind:start_ind + dependence_length] = self.prior_ppfs[self.param_prior_types[i]](hypercube[start_ind:start_ind + dependence_length], self.hyperparams[start_ind:start_ind + dependence_length], self.stoc_hyperparams[start_ind:start_ind + dependence_length])
 			start_ind += dependence_length
+		print "params"
 		print self.params
 		return self.params
 
@@ -333,6 +337,11 @@ class sqrt_recip_gamma_prior(gamma_prior):
 	def __call__(self, p, a, b):
 		return np.sqrt(1. / gamma_prior.__call__(self, p, a, b))
 
+#FOLLOWING ARE REPLICAS OF THOSE FOUND IN INVERSE_PRIORS.PY
+#INCLUDED AGAIN BY MISTAKE REALLY (BUT IF REMOVED FUNCTIONS IN THIS FILE RELYING
+#ON THEM WILL NEED TO BE CALLED FROM INVERSE_PRIORS.PY INSTEAD
+#-------------------------------------------------------------------------
+
 def forced_identifiability_transform(p):
 	"""
 	don't think this can be vectorised in python,
@@ -376,6 +385,8 @@ def forced_identifiability_transform3(p):
 	t[0] = p[-1]**(1. / n)
 	t[1:] = p[-2::-1]**(1. / i) * t[:-1]
 	return t
+
+#--------------------------------------------------------------------------------------
 
 class sorted_uniform_prior(uniform_prior):
 	def __call__(self, p, a, b):

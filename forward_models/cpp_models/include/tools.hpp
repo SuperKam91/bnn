@@ -2,6 +2,7 @@
 
 /* external codebases */
 #include <vector>
+#include <string>
 
 //without header such as iostream, typedef uint isn't defined, so use unsigned int here (and in tools.cpp) instead.
 
@@ -17,6 +18,12 @@ std::vector<unsigned int> get_weight_shapes(const unsigned int &, const std::vec
 
 std::vector<unsigned int> get_weight_shapes(const unsigned int &, const std::vector<unsigned int> &, const unsigned int &, const std::vector<bool> &, const std::vector<bool> &);
 
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> &);
+
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> &, const std::vector<bool> &);
+
+std::vector<unsigned int> calc_num_weights_layers(const std::vector<unsigned int> &, const std::vector<bool> &, const std::vector<bool> &);
+
 std::vector<unsigned int> get_degen_dependence_lengths(const std::vector<unsigned int> &, const bool &);
 
 std::vector<unsigned int> get_degen_dependence_lengths2(const std::vector<unsigned int> &, const bool &);
@@ -24,6 +31,8 @@ std::vector<unsigned int> get_degen_dependence_lengths2(const std::vector<unsign
 std::vector<unsigned int> get_degen_dependence_lengths3(const std::vector<unsigned int> &, const bool &);
 
 std::vector<unsigned int> get_degen_dependence_lengths4(const std::vector<unsigned int> &, const bool &);
+
+std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> &, const std::string &);
 
 std::vector<double> get_seq_vec(std::vector<double> seq_values, std::vector<unsigned int> seq_lengths);
 

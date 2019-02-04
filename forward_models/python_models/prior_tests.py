@@ -708,8 +708,3 @@ def inverse_stoc_hyper_priors_test14():
 	print isp.laplace_prior()(p[23], u[14], v[14])
 	print isp.laplace_prior()(p[24], u[15], v[15])
 	print isp.gaussian_prior()(p[25], u[16], v[16])
-
-# prior_functions_test()
-# print ""
-# stoc_prior_functions_test()
-inverse_stoc_hyper_priors_test14()

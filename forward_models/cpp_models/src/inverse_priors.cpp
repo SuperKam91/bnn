@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
+#include <gsl/gsl_cdf.h>
 
 /* in-house code */
 #include "inverse_priors.hpp"
@@ -108,22 +109,40 @@ Eigen::VectorXd delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
 	return Eigen::VectorXd::Constant(p_m.size(), value);
 }
 
-//test to ensure this doesn't reallocate theta_m to different memory location
 void delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
 	theta_m = Eigen::VectorXd::Constant(p_m.size(), value);
 }
 
+//convention for b propto 1 / scale_param used as in python implementation
 gamma_prior::gamma_prior(double a_, double b_) :
 	a(a_),
 	b(b_) {
 }
 
+//not vectorised using eigen, so could be improved. however, would require own implementation of inverse transform sampling
 Eigen::VectorXd gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
-	return x0 + gamma * (M_PI * (p_m.array() - 0.5)).tan();
+	long int n = p_m.size();
+	Eigen::VectorXd theta_m(n);
+	for (long int i = 0; i < n; ++i) {
+		theta_m(i) = gsl_cdf_gamma_Pinv(p_m(i), a, 1. / b);
+	}
+	return theta_m;
 }
 
 void gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
-	theta_m = x0 + gamma * (M_PI * (p_m.array() - 0.5)).tan();
+	long int n = p_m.size();
+	for (long int i = 0; i < n; ++i) {
+		theta_m(i) = gsl_cdf_gamma_Pinv(p_m(i), a, 1. / b);
+	}
+}
+
+Eigen::VectorXd sqrt_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	return (gamma_prior::operator()(p_m)).array().inverse().sqrt();
+}
+
+void sqrt_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	gamma_prior::operator()(p_m, theta_m);
+	theta_m = theta_m.array().inverse().sqrt();
 }
 
 Eigen::VectorXd forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m) {
@@ -291,9 +310,37 @@ void sorted_cauchy_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref
 	cauchy_prior::operator()(t_m, theta_m);
 }
 
+Eigen::VectorXd sorted_delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	return delta_prior::operator()(t_m);
+}
+
+void sorted_delta_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	delta_prior::operator()(t_m, theta_m);
+}
+
+Eigen::VectorXd sorted_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	return gamma_prior::operator()(t_m);
+}
+
+void sorted_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	gamma_prior::operator()(t_m, theta_m);
+}
+
+Eigen::VectorXd sorted_sqrt_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	return sqrt_recip_gamma_prior::operator()(t_m);
+}
+
+void sorted_sqrt_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	sqrt_recip_gamma_prior::operator()(t_m, theta_m);
+}
+
 using namespace std::placeholders;
-//since prior_call_by_dependence_lengths is the only implementation the calling function can use, if one wants to use the same prior for
-//all parameters, set the dependence length = n_dims 
 inverse_prior::inverse_prior(std::vector<uint> prior_types_, std::vector<double> prior_hyperparams_, std::vector<uint> dependence_lengths_, std::vector<uint> param_prior_types_, uint n_dims_) :
 	prior_types(prior_types_),
 	prior_hyperparams(prior_hyperparams_),
@@ -340,25 +387,43 @@ std::vector<base_prior *> inverse_prior::get_ppf_ptr_vec() {
 			ppf_ptr_vec.push_back(new cauchy_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 7) {
-			ppf_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new delta_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 8) {
-			ppf_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 9) {
-			ppf_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sqrt_recip_gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 10) {
-			ppf_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 11) {
-			ppf_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 12) {
-			ppf_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 13) {
+			ppf_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 14) {
+			ppf_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 15) {
+			ppf_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 16) {
 			ppf_ptr_vec.push_back(new sorted_cauchy_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 17) {
+			ppf_ptr_vec.push_back(new sorted_delta_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 18) {
+			ppf_ptr_vec.push_back(new sorted_gamma_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 19) {
+			ppf_ptr_vec.push_back(new sorted_sqrt_rec_gam_prior(hyperparam1, hyperparam2));
 		}
 	}
 	return ppf_ptr_vec;
@@ -369,13 +434,11 @@ std::vector<base_prior *> inverse_prior::get_ppf_ptr_vec() {
 //n.b. RVO/NRVO only occurs when initialising an object
 void inverse_prior::prior_call_by_dependence_lengths(Eigen::Ref<Eigen::VectorXd> & cube_m, Eigen::Ref<Eigen::VectorXd> & theta_m) {
 	uint start_ind = 0;
-	uint func_count = 0;
 	uint dependence_length;
 	for (uint i = 0; i < dependence_lengths.size(); ++i){ 
 		dependence_length = dependence_lengths.at(i);
-		(ppf_ptr_v.at(param_prior_types.at(func_count)))->operator()(cube_m.segment(start_ind, dependence_length), theta_m.segment(start_ind, dependence_length));
+		(ppf_ptr_v.at(param_prior_types.at(i)))->operator()(cube_m.segment(start_ind, dependence_length), theta_m.segment(start_ind, dependence_length));
 		start_ind += dependence_length;
-		func_count += 1;
 	}
 }
 

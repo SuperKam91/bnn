@@ -65,9 +65,11 @@ inverse_prior e_ip(g_prior_types, g_prior_hyperparams, g_dependence_lengths, g_p
 
 int main() {
 	bool nn_prior_t = false;
+	bool prior_pft = false;
+	bool prior_spft = false;
 	bool forward_t_linear = false;
-	bool polychord1_run = true;
-	bool profiling = false;
+	bool polychord1_run = false;
+	bool profiling = false; //also dictates whether to print output or not
 	//setup ll, can't do this outside of function
 	e_nn.setup_LL("gauss"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
@@ -76,8 +78,14 @@ int main() {
 		start = std::chrono::high_resolution_clock::now();
 	}
 	if (nn_prior_t) {
-		nn_prior_test(!profiling); //suppress output
+		nn_prior_test(!profiling); 
 	}	
+	if (prior_pft) {
+		prior_functions_test(!profiling);
+	}
+	if (prior_spft) {
+		stoc_prior_functions_test(!profiling);		
+	}
 	if (forward_t_linear) {
 		forward_test_linear();
 	}

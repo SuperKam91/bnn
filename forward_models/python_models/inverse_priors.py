@@ -86,23 +86,27 @@ class inverse_prior:
 			elif p_type == 8:
 				self.prior_ppfs.append(gamma_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 9:
-				self.prior_ppfs.append(sorted_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sqrt_recip_gamma_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 10:
-				self.prior_ppfs.append(sorted_pos_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 11:
-				self.prior_ppfs.append(sorted_neg_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_pos_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 12:
-				self.prior_ppfs.append(sorted_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_neg_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 13:
-				self.prior_ppfs.append(sorted_gaussian_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_log_uniform_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 14:
-				self.prior_ppfs.append(sorted_laplace_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_gaussian_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 15:
-				self.prior_ppfs.append(sorted_cauchy_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_laplace_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 16:
-				self.prior_ppfs.append(sorted_delta_prior(prior_hyperparam1, prior_hyperparam2))
+				self.prior_ppfs.append(sorted_cauchy_prior(prior_hyperparam1, prior_hyperparam2))
 			elif p_type == 17:
+				self.prior_ppfs.append(sorted_delta_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 18:
 				self.prior_ppfs.append(sorted_gamma_prior(prior_hyperparam1, prior_hyperparam2))
+			elif p_type == 19:
+				self.prior_ppfs.append(sorted_sqrt_rec_gam_prior(prior_hyperparam1, prior_hyperparam2))
 
 	def prior_call_ind_same(self, hypercube):
 		self.params[:] = self.prior_ppfs[0](hypercube)
