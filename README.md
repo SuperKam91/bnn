@@ -119,6 +119,8 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- n.b. in Neal, scaling of hyperprior params (by number of units in that layer) is only applicable to hidden layers, and in particular, not to the biases.
+
 - Look at success of global average pooling layers (GAP). Premise is for an input layer of size (num_batches, height, width, depth), take average value over height and width to return a tensor with shape (num_batches, 1, 1, depth). Useful for e.g. drastically reducing size of any subsequent fully connected layers. See:
 https://alexisbcook.github.io/2017/global-average-pooling-layers-for-object-localization/
 
