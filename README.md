@@ -1,5 +1,8 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
+
+Qualitative document giving an overview of BNNs and the features of this package:
+https://www.overleaf.com/5218885132gxxndzvrfhfn
   
 # Interesting datasets
 - gresearch financial forecasting challenge: https://financialforecasting.gresearch.co.uk/
