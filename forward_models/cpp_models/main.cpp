@@ -13,6 +13,7 @@
 #include "input_tools.hpp"
 #include "tools.hpp"
 #include "inverse_priors.hpp"
+#include "inverse_stoc_hyper_priors.hpp"
 #include "mathematics.hpp"
 #include "prior_tests.hpp"
 
@@ -46,6 +47,7 @@ const std::string g_x_path = e_data_dir + e_data + "_x_tr_10.csv";
 const std::string g_y_path = e_data_dir + e_data + "_y_tr_10.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/";
+const std::string e_data_suffix = "_sh_slp_10";
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
 //this initialisation has to be done at global scope in some file, unless polychord wrapper is modified to take forward_prop object.
@@ -57,10 +59,51 @@ bool g_independent = true;
 std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_shapes, g_independent);
 //the following parameters should be specified manually
 //-----------------------------------------------------------------------------
-std::vector<uint> g_prior_types = {4};
-std::vector<double> g_prior_hyperparams = {0., 1.};
-std::vector<uint> g_param_prior_types = {0};
-inverse_prior e_ip(g_prior_types, g_prior_hyperparams, g_dependence_lengths, g_param_prior_types, e_n_weights);
+//first determine whether to use stochastic or deterministic hyperparameters
+//-----------------------------------------------------------------------------
+#define g_PRIOR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
+#if g_PRIOR_TYPE == 'D'
+	const std::string e_hyper_type = "deterministic"; //"deterministic" or "stochastic"
+	std::vector<uint> g_prior_types = {4};
+	std::vector<double> g_prior_hyperparams = {0., 1.};
+	std::vector<uint> g_param_prior_types = {0};
+	inverse_prior e_ip(g_prior_types, g_prior_hyperparams, g_dependence_lengths, g_param_prior_types, e_n_weights);
+	//DO NOT CHANGE FOLLOWING LINES. e_sh_ip CLASS IS CREATED PURELY TO MAKE THE CODE COMPILE, IT WILL NEVER BE USED
+	//IN THIS CASE
+	//--------------------------------------------------------------------------------------------------------------
+	const uint e_n_stoc = 0; //even though not used, because it is extern, still needs to be declared
+	std::vector<uint> DUMMY_hyperprior_types = {};
+	std::vector<uint> DUMMY_prior_types = {};
+	std::vector<double> DUMMY_hyperprior_params = {};
+	std::vector<double> DUMMY_prior_hyperparams = {};
+	std::vector<uint> DUMMY_hyper_dependence_lengths = {};
+	std::vector<uint> DUMMY_dependence_lengths = {};
+	std::vector<uint> DUMMY_param_hyperprior_types = {};
+	std::vector<uint> DUMMY_param_prior_types = {};
+	sh_inverse_prior e_sh_ip(DUMMY_hyperprior_types, DUMMY_prior_types, DUMMY_hyperprior_params, DUMMY_prior_hyperparams, DUMMY_hyper_dependence_lengths, DUMMY_dependence_lengths, DUMMY_param_hyperprior_types, DUMMY_param_prior_types, 0, 0);
+	//--------------------------------------------------------------------------------------------------------------
+#elif g_PRIOR_TYPE == 'S'
+	const std::string e_hyper_type = "stochastic"; //"deterministic" or "stochastic"
+	std::string g_granularity = "single"; //"single", "layer" or "input_size"
+	std::vector<uint> g_hyper_dependence_lengths = get_hyper_dependence_lengths(g_weight_shapes, g_granularity);
+	const uint e_n_stoc = static_cast<uint>(g_hyper_dependence_lengths.size());
+	std::vector<uint> g_hyperprior_types = {9};
+	std::vector<uint> g_prior_types = {4};
+	std::vector<double> g_hyperprior_params = {2. / 2., 2. / (2. * 1.)};
+	std::vector<double> g_prior_hyperparams = {0.};
+	std::vector<uint> g_param_hyperprior_types = {0};
+	std::vector<uint> g_param_prior_types = {0};
+	sh_inverse_prior e_sh_ip(g_hyperprior_types, g_prior_types, g_hyperprior_params, g_prior_hyperparams, g_hyper_dependence_lengths, g_dependence_lengths, g_param_hyperprior_types, g_param_prior_types, e_n_stoc, e_n_weights);
+	//DO NOT CHANGE FOLLOWING LINES. e_ip CLASS IS CREATED PURELY TO MAKE THE CODE COMPILE, IT WILL NEVER BE USED
+	//IN THIS CASE
+	//--------------------------------------------------------------------------------------------------------------
+	std::vector<uint> DUMMY_prior_types = {};
+	std::vector<double> DUMMY_prior_hyperparams = {};
+	std::vector<uint> DUMMY_dependence_lengths = {};
+	std::vector<uint> DUMMY_param_prior_types = {};
+	inverse_prior e_ip(DUMMY_prior_types, DUMMY_prior_hyperparams, DUMMY_dependence_lengths, DUMMY_param_prior_types, 0);
+	//--------------------------------------------------------------------------------------------------------------
+#endif
 //-----------------------------------------------------------------------------
 
 int main() {
@@ -68,7 +111,7 @@ int main() {
 	bool prior_pft = false;
 	bool prior_spft = false;
 	bool forward_t_linear = false;
-	bool polychord1_run = false;
+	bool polychord1_run = true;
 	bool profiling = false; //also dictates whether to print output or not
 	//setup ll, can't do this outside of function
 	e_nn.setup_LL("gauss"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
@@ -77,8 +120,11 @@ int main() {
 	if (profiling) {
 		start = std::chrono::high_resolution_clock::now();
 	}
-	if (nn_prior_t) {
+	if (nn_prior_t && (e_hyper_type == "deterministic")) {
 		nn_prior_test(!profiling); 
+	}
+	else if (nn_prior_t && (e_hyper_type == "stochastic")) {
+		nn_sh_prior_test(!profiling); 
 	}	
 	if (prior_pft) {
 		prior_functions_test(!profiling);

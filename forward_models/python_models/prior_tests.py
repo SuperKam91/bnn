@@ -6,14 +6,15 @@ import inverse_priors as ip
 import tools
 import inverse_stoc_hyper_priors as isp
 
-def nn_prior_test(prior):
+def nn_prior_test(prior, n_dims):
 	"""
 	takes prior object setup for nn calculation,
 	and uses arbitrary hypercube created here to calculate
 	inverse prior (parameter values).
-	p should be same length as dimensionality of nn
+	can be used for deterministic or stochastic hyperparameter prior classes.
 	"""
-	p = np.array([0.1, 0.9]*35)	
+	p = np.array([0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7])
+	p = p[:n_dims]	
 	theta = prior(p)
 	print "hypercube = "
 	print p
@@ -661,9 +662,9 @@ def inverse_stoc_hyper_priors_test14():
 	real nn arch with 16 nn params, two hyperparams, input_size granularity, 
 	degen dependent params
 	"""
-	num_inputs = 1
-	layer_sizes = [3,2]
-	num_outputs = 1
+	num_inputs = 2
+	layer_sizes = [3]
+	num_outputs = 2
 	print "num weights"
 	n_dims = tools.calc_num_weights(num_inputs, layer_sizes, num_outputs)
 	print tools.calc_num_weights(num_inputs, layer_sizes, num_outputs)
@@ -673,6 +674,8 @@ def inverse_stoc_hyper_priors_test14():
 	granularity = 'input_size'
 	hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
 	n_stoc = len(hyper_dependence_lengths)
+	print "n_stoc"
+	print n_stoc
 	print "granularity"
 	print tools.get_hyper_dependence_lengths(weight_shapes, granularity)
 	print "number of weights per layer"
@@ -708,3 +711,6 @@ def inverse_stoc_hyper_priors_test14():
 	print isp.laplace_prior()(p[23], u[14], v[14])
 	print isp.laplace_prior()(p[24], u[15], v[15])
 	print isp.gaussian_prior()(p[25], u[16], v[16])
+
+if __name__ == '__main__':
+	inverse_stoc_hyper_priors_test14()

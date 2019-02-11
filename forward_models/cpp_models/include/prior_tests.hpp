@@ -2,6 +2,8 @@
 
 void nn_prior_test(bool);
 
+void nn_sh_prior_test(bool);
+
 void prior_test(bool);
 
 void prior_functions_test(bool);

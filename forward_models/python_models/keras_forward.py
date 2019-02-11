@@ -1,5 +1,6 @@
 #for some reason if you import scipy.stats before tf, get ImportError on scipy.stats import
 import inverse_priors
+import inverse_stoc_hyper_priors as isp
 
 #########commercial modules
 import numpy as np
@@ -373,29 +374,43 @@ def main(run_string):
     if "forward_test_linear" in run_string:
     	forward_tests.forward_test_linear([km], num_weights, weights_dir)
     ###### setup prior
-    prior_types = [4]
-    prior_hyperparams = [[0., 1.]]
+    hyper_type = "stochastic" # "stochastic" or "deterministic"
     weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
     dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
-    param_prior_types = [0]
-    prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+    if hyper_type == "deterministic":
+        prior_types = [4]
+        prior_hyperparams = [[0., 1.]]
+        param_prior_types = [0]
+        prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+        n_stoc = 0
+    elif hyper_type == "stochastic":
+        granularity = 'single'
+        hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
+        hyperprior_types = [9]
+        prior_types = [4]
+        hyperprior_params = [[1. / 2., 1. / (2. * 100)]]
+        prior_hyperparams = [0.]
+        param_hyperprior_types = [0]
+        param_prior_types = [0]
+        n_stoc = len(hyper_dependence_lengths)
+        prior = isp.inverse_stoc_hyper_prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, num_weights)
     ###### test prior output from nn setup
     if "nn_prior_test" in run_string:
-    	prior_tests.nn_prior_test(prior)
+    	prior_tests.nn_prior_test(prior, n_stoc + num_weights)
     ###### setup polychord
     nDerived = 0
-    settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
+    settings = PyPolyChord.settings.PolyChordSettings(n_stoc + num_weights, nDerived)
     settings.base_dir = './keras_chains/'
-    settings.file_root = data + "slp_1"
+    settings.file_root = data + "_sh_slp_1"
     settings.nlive = 1000
     ###### run polychord
     if "polychord1" in run_string:
-    	PyPolyChord.run_polychord(km, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+    	PyPolyChord.run_polychord(km, n_stoc, num_weights, nDerived, settings, prior, polychord_tools.dumper)
     if "writeparamnames" in run_string:
         output_tools.write_paramnames(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr, 'bh_50_slp_1', False, False, True, False)
 
 if __name__ == '__main__':
-	run_string = 'forward_test_linear'
+	run_string = 'polychord1'
 	main(run_string)
 
 

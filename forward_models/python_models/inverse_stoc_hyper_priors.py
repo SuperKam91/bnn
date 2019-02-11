@@ -44,7 +44,7 @@ class inverse_stoc_hyper_prior:
 		self.prior_ppfs = []
 		self.hyperparams = np.zeros(n_dims)
 		self.stoc_hyperparams = np.zeros(n_dims)
-		self.params = np.zeros(n_dims)
+		self.params = np.zeros(n_stoc + n_dims)
 		self.get_hyperprior_ppf_objs()
 		self.get_ppf_objs()
 		#just one stochastic hyperparameter
@@ -178,10 +178,10 @@ class inverse_stoc_hyper_prior:
 
 	def __call__(self, hypercube):
 		self.hyperprior_call(hypercube[:self.n_stoc])
-		print "det hyperparams"
-		print self.hyperparams
-		print "stoc hyperparams"
-		print self.stoc_hyperparams
+		# print "det hyperparams"
+		# print self.hyperparams
+		# print "stoc hyperparams"
+		# print self.stoc_hyperparams
 		return self.prior_call(hypercube[self.n_stoc:])
 
 	def hyperprior_call_ind(self, hypercube):
@@ -189,19 +189,22 @@ class inverse_stoc_hyper_prior:
 		n.b. even though one hyper param used, stoc_hyperparams has
 		length same as dimensions of params (for implementation efficiency)
 		""" 
-		self.stoc_hyperparams.fill(self.hyperprior_ppfs[0](hypercube)[0])
+		hyperparam_sample = self.hyperprior_ppfs[0](hypercube)[0]
+		self.params[0] = hyperparam_sample
+		self.stoc_hyperparams.fill(hyperparam_sample)
 
 	def hyperprior_call_by_hyper_dependence_lengths(self, hypercube):
 		start_ind = 0
 		for i, dependence_length in enumerate(self.hyper_dependence_lengths):
 			hyperparam_sample = self.hyperprior_ppfs[self.param_hyperprior_types[i]](hypercube[i])
+			self.params[i] = hyperparam_sample
 			self.stoc_hyperparams[start_ind:start_ind + dependence_length].fill(hyperparam_sample)
 			start_ind += dependence_length
 
 	def prior_call_ind_same(self, hypercube):
-		self.params[:] = self.prior_ppfs[0](hypercube, self.hyperparams, self.stoc_hyperparams)
-		print "params"
-		print self.params
+		self.params[self.n_stoc:] = self.prior_ppfs[0](hypercube, self.hyperparams, self.stoc_hyperparams)
+		# print "params"
+		# print self.params
 		return self.params
 
 	def prior_call_by_par_type(self, hypercube):
@@ -222,10 +225,10 @@ class inverse_stoc_hyper_prior:
 		"""
 		start_ind = 0
 		for i, dependence_length in enumerate(self.dependence_lengths):
-			self.params[start_ind:start_ind + dependence_length] = self.prior_ppfs[self.param_prior_types[i]](hypercube[start_ind:start_ind + dependence_length], self.hyperparams[start_ind:start_ind + dependence_length], self.stoc_hyperparams[start_ind:start_ind + dependence_length])
+			self.params[start_ind + self.n_stoc: start_ind + self.n_stoc + dependence_length] = self.prior_ppfs[self.param_prior_types[i]](hypercube[start_ind: start_ind + dependence_length], self.hyperparams[start_ind: start_ind + dependence_length], self.stoc_hyperparams[start_ind: start_ind + dependence_length])
 			start_ind += dependence_length
-		print "params"
-		print self.params
+		# print "params"
+		# print self.params
 		return self.params
 
 class base_prior:

@@ -1,3 +1,7 @@
+#for some reason if you import scipy.stats before tf, get ImportError on scipy.stats import
+import inverse_priors
+import inverse_stoc_hyper_priors as isp
+
 #########commercial modules
 
 #in-house modules
@@ -10,7 +14,6 @@ import tf_forward as tff
 import tools
 import PyPolyChord
 import PyPolyChord.settings
-import inverse_priors
 import polychord_tools
 import input_tools
 import forward_tests
@@ -36,17 +39,17 @@ def main(run_string):
     ###### setup keras model
     model = kms.slp_model(num_inputs, num_outputs, layer_sizes)
     km = kf.keras_model(model, x_tr, y_tr, batch_size)
-    loss = 'mse' 
+    loss = 'mse' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
     km.setup_LL(loss)
     #setup tf graph
     tf_graph = tfgs.slp_graph
     tfm = tff.tf_model(tf_graph, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
-    fit_metric = 'chisq'
+    fit_metric = 'chisq' # 'chisq', 'av_chisq', 'categorical_crossentropy', 'av_categorical_crossentropy'
     tfm.setup_LL(fit_metric)
     #set up np model
     np_nn = npms.slp_nn
     npm = npf.np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
-    ll_type = 'gauss'
+    ll_type = 'gauss' # 'gauss', 'av_gauss', 'categorical_crossentropy', 'av_categorical_crossentropy'
     npm.setup_LL(ll_type)
     ###### test llhood output
     if "k_forward_test_linear" in run_string:
@@ -56,20 +59,31 @@ def main(run_string):
     if "np_forward_test_linear" in run_string:
         forward_tests.forward_test_linear([npm], num_weights, data_dir)
     ###### setup prior
-    prior_types = [7]
-    prior_hyperparams = [[-2., 2.]]
-    weight_shapes = get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
-    dependence_lengths = get_degen_dependence_lengths(weight_shapes)
-    param_prior_types = [0]
-    prior = inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+    if hyper_type == "deterministic":
+        prior_types = [4]
+        prior_hyperparams = [[0., 1.]]
+        param_prior_types = [0]
+        prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+        n_stoc = 0
+    elif hyper_type == "stochastic":
+        granularity = 'single'
+        hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
+        hyperprior_types = [9]
+        prior_types = [4]
+        hyperprior_params = [[0.1 / 2., 0.1 / (2. * 100)]]
+        prior_hyperparams = [0.]
+        param_hyperprior_types = [0]
+        param_prior_types = [0]
+        n_stoc = len(hyper_dependence_lengths)
+        prior = isp.inverse_stoc_hyper_prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, num_weights)
     ###### test prior output from nn setup
     if "nn_prior_test" in run_string:
-        prior_tests.nn_prior_test(prior)
+        prior_tests.nn_prior_test(prior, n_stoc + num_weights)
     ###### setup polychord
     nDerived = 0
-    settings = PyPolyChord.settings.PolyChordSettings(num_weights, nDerived)
-    settings.file_root = data
-    settings.nlive = 200
+    settings = PyPolyChord.settings.PolyChordSettings(n_stoc + num_weights, nDerived)
+    settings.file_root = data + "slp_1"
+    settings.nlive = 1000
     ###### run polychord
     if "k_polychord1" in run_string:
         settings.base_dir = './keras_chains/'

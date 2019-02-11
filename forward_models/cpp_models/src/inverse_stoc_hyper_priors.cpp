@@ -641,14 +641,15 @@ Eigen::VectorXd sh_inverse_prior::fill_det_hypers() {
 	return hyperparams;
 }
 
-void sh_inverse_prior::hyperprior_call_ind(Eigen::Ref<Eigen::VectorXd> cube_m) {
+void sh_inverse_prior::hyperprior_call_ind(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
 	Eigen::VectorXd temp(1);
 	(ppf_hp_ptr_v.at(0))->operator()(cube_m, temp);
+	theta_m(0) = temp(0);
 	stoc_hyperparams_m = Eigen::VectorXd::Constant(stoc_hyperparams_m.size(), temp(0));
 }
 
 //again, need to test for loop and slicing method to see if latter works.
-void sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths(Eigen::Ref<Eigen::VectorXd> cube_m) {
+void sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
 	uint start_ind = 0;
 	uint dependence_length;
 	Eigen::VectorXd temp(1);
@@ -658,6 +659,8 @@ void sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths(Eigen::Ref<Ei
 		// for (uint j = 0; j < dependence_length; ++j) {
 		// 	stoc_hyperparams_m(start_ind + j) = temp(0);
 		// }
+		//could probably just pass theta_m.segment(i, 1) to function call above instead, but for now use this slightly drawn out way
+		theta_m(i) = temp(0);
 		stoc_hyperparams_m.segment(start_ind, dependence_length) = Eigen::VectorXd::Constant(dependence_length, temp(0));
 		start_ind += dependence_length;
 	}
@@ -682,30 +685,28 @@ void sh_inverse_prior::prior_call_ind_same(Eigen::Ref<Eigen::VectorXd> cube_m, E
 //seems to be because here cube_m.segment() is used instead of cube_m.
 //same goes for signatures of functions called by this function
 void sh_inverse_prior::operator()(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
-	std::cout << "cube" << std::endl;
-	std::cout << cube_m << std::endl;
-
-	std::cout << "det hyperparams" << std::endl;
-	std::cout << hyperparams_m << std::endl;
-	std::function<void(Eigen::Ref<Eigen::VectorXd>)> hyperprior_call_ptr;
+	// std::cout << "cube" << std::endl;
+	// std::cout << cube_m << std::endl;
+	// std::cout << "det hyperparams" << std::endl;
+	// std::cout << hyperparams_m << std::endl;
+	std::function<void(Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>)> hyperprior_call_ptr;
 	if (hyper_dependence_lengths.size() == 1) {
-		hyperprior_call_ptr = std::bind(&sh_inverse_prior::hyperprior_call_ind, this, _1);
+		hyperprior_call_ptr = std::bind(&sh_inverse_prior::hyperprior_call_ind, this, _1, _2);
 	}
 	else {
-		hyperprior_call_ptr = std::bind(&sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths, this, _1);
+		hyperprior_call_ptr = std::bind(&sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths, this, _1, _2);
 	}
 	std::function<void(Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>)> prior_call_ptr;
-	hyperprior_call_ptr(cube_m.segment(0, n_stoc));
-	std::cout << "stoc hyperparams" << std::endl;
-	std::cout << stoc_hyperparams_m << std::endl;
+	hyperprior_call_ptr(cube_m.segment(0, n_stoc), theta_m.segment(0, n_stoc));
+	// std::cout << "stoc hyperparams" << std::endl;
+	// std::cout << stoc_hyperparams_m << std::endl;
 	if (dependence_lengths.size() == 1) {
 		prior_call_ptr = std::bind(&sh_inverse_prior::prior_call_ind_same, this, _1, _2);
 	}
 	else {
 		prior_call_ptr = std::bind(&sh_inverse_prior::prior_call_by_dependence_lengths, this, _1, _2);
 	}
-	prior_call_ptr(cube_m.segment(n_stoc, n_dims), theta_m);
-	std::cout << "theta" << std::endl;
-	std::cout << theta_m << std::endl;
-
+	prior_call_ptr(cube_m.segment(n_stoc, n_dims), theta_m.segment(n_stoc, n_dims));
+	// std::cout << "theta" << std::endl;
+	// std::cout << theta_m << std::endl;
 }

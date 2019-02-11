@@ -209,8 +209,8 @@ public:
 	~sh_inverse_prior();
 	Eigen::VectorXd init_stoc_hypers();
 	Eigen::VectorXd fill_det_hypers();
-	void hyperprior_call_ind(Eigen::Ref<Eigen::VectorXd> cube_m);
-	void hyperprior_call_by_hyper_dependence_lengths(Eigen::Ref<Eigen::VectorXd> cube_m);
+	void hyperprior_call_ind(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+	void hyperprior_call_by_hyper_dependence_lengths(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 	void prior_call_by_dependence_lengths(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 	void prior_call_ind_same(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 	void operator()(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);
