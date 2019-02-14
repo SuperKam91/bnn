@@ -31,6 +31,8 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - Compare performance of different architectures, different granularity of stochastic hyperparameters on Boston housing dataset in terms of Evidence and test set errors.
 - Think of L0 regularisation in terms of a prior.
 - Look at treating likelihood variance as stochastic.
+- See how 'infinitely' long ResNets perform c.f. universal approximation using ResNets paper.
+- Look at cosmology data provided by collaborators, play with traditional nns and bnns.  
 - Start thinking about how to adapt pipeline so that number of layers, number of neurons and type of activation functions can be treated as stochastic hyperparameters.
 - Maybe also think about how at least some parts of the training can be done traditionally (via optimisation) and as a bonus, how one can obtain uncertainty and evidence estimates from this subspace by using the Hessian.
 - Look at typical dimensionality of sequential/recurrent nns.
