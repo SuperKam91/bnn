@@ -137,6 +137,8 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 - Activation functions can be treated as a stochastic parameter: assign a categorical variable to the type used. Then can marginalise over this variable when making prediction, so we are essentially considering an ensemble of networks (with different activations and weights) to make the prediction. Also look at evidence/test error (and compare with models where activation isn't varied), see if switching activations worth it.
 
+- Same can be said with network size, as different architectures can lead to different numerical instabilities in the gradients.
+
 - Would be interesting to see if bnns show activation which fits the data particularly well (by looking at evidence / test error), where gradients aren't important.
 
 - n.b. in Neal, scaling of hyperprior params (by number of units in that layer) is only applicable to hidden layers, and in particular, not to the biases.
