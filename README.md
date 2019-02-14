@@ -28,12 +28,17 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 # other stuff
 
-- Look at typical dimensionality of sequential/recurrent nns
-- Run MLP bnns on fifa dataset using HPC
-- Look at y_pred posteriors for test data for SLP bnn results
-- Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord
-- Implement support for stochastic hyperparameters (prior and likelihood)
-- Look for more interesting small dataset problems from e.g. kaggle
+- Compare performance of different architectures, different granularity of stochastic hyperparameters on Boston housing dataset in terms of Evidence and test set errors.
+- Think of L0 regularisation in terms of a prior.
+- Look at treating likelihood variance as stochastic.
+- Start thinking about how to adapt pipeline so that number of layers, number of neurons and type of activation functions can be treated as stochastic hyperparameters.
+- Maybe also think about how at least some parts of the training can be done traditionally (via optimisation) and as a bonus, how one can obtain uncertainty and evidence estimates from this subspace by using the Hessian.
+- Look at typical dimensionality of sequential/recurrent nns.
+- Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord.
+
+# discarded stuff
+
+- Will forget about FIFA dataset runs for now, and concentrate on Boston housing
 
 # summaries of other large scale works on bnns
 
@@ -121,6 +126,16 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 - papers on restricted Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
 
 # thoughts scratchpad
+
+- L0 norm is a much desired regularisation type in traditional methods, but is difficult to compute. Wonder what prior this corresponds to.
+
+- As these models become increasingly complex as we let the data decide more hyperparameters (prior variance, likelihood variance, number of layers, number of neurons per layer, type of activation functions, network parameters), may be worth training some of these (i.e. the differentiable ones) using traditional (optimisation) methods. One can still get a measure of uncertainty and an estimate of the evidence on this subspace by looking at the Hessian.
+
+- Likewise neural network size can be either judged by evidence (and see if it correlates with test set error), or chosen by data (by treating as a stochastic hyperparameter) and marginalised over.
+
+- Activation functions can be treated as a stochastic parameter: assign a categorical variable to the type used. Then can marginalise over this variable when making prediction, so we are essentially considering an ensemble of networks (with different activations and weights) to make the prediction. Also look at evidence/test error (and compare with models where activation isn't varied), see if switching activations worth it.
+
+- Would be interesting to see if bnns show activation which fits the data particularly well (by looking at evidence / test error), where gradients aren't important.
 
 - n.b. in Neal, scaling of hyperprior params (by number of units in that layer) is only applicable to hidden layers, and in particular, not to the biases.
 
