@@ -28,11 +28,25 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 # 21cm stuff
 
-- Seems that for 7 inputs (cosmo parameters), 21cm signal is predicted as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. However, this method would require a separate interpolation step for predictions at redshifts other than the discrete values used in training.
+## data
+
+- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. 
+
+## first thoughts on modelling process
+
+- From the data I initially thought that the objective was to predict the 21cm signal as a function of redshift, and so came up with the following ideas (turns out I was completely wrong):
+
+- For 7 inputs (cosmo parameters), predict 21cm signal as a function of redshift, over the 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. However, this method would require a separate interpolation step for predictions at redshifts other than the discrete values used in training.
 
 - Could also formulate the problem differently. Could instead consider 136 separate nns each having 8 inputs (the 7 cosmo params and one redshift value), each having one output (the 21cm signal at that redshift), so that for each nn the input is m x 8 and the output is m x 1. However since each nn corresponding to the signal at different z is trained independently, think this would lose some information compared with above approach. This is because one would be sampling independently from 136 likelihoods rather than a joint likelihood over the full signal, which would have a profound effect in deep neural networks where a hidden layer parameter influences multiple outputs. Method would also require interpolation.
 
 - I think the best approach would be to treat z as an input parameter, and treat each of the 136 outputs as separate records of the data corresponding to one output (the 21cm signal). In this case the input to the nn is (m * 136) x 8 and the output is (m * 136) x 1. Technically this would give a nn whose output is continuous, but since the redshift values used for training only take a small number (136) of different values compared with the size of the training data, I'm not sure how well the function will generalise to out of training distribution redshift values.
+
+## thoughts on modelling after looking at paper
+
+- Turns out objective is to predict 21cm signal as a function of frequency (which isn't given?), and to do this a number of steps are taken, involving several regression and classification nns. The main premise is that a nn is used to learn the coefficients of a PCA (coefficients of each basis function) which spans the dataset, as well as key points of the signal.
+
+- Basically, uses nn with inputs and outputs of parameters I don't have, to make classifications and regressions, to make decisions on how many PCA components to use, the values of their coefficients, and the value of the emission at key astrophysical points.
 
 # other stuff
 
@@ -40,7 +54,6 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - Think of L0 regularisation in terms of a prior.
 - Look at treating likelihood variance as stochastic.
 - See how 'infinitely' long ResNets perform c.f. universal approximation using ResNets paper.
-- Look at cosmology data provided by collaborators, play with traditional nns and bnns.  
 - Start thinking about how to adapt pipeline so that number of layers, number of neurons and type of activation functions can be treated as stochastic hyperparameters.
 - Maybe also think about how at least some parts of the training can be done traditionally (via optimisation) and as a bonus, how one can obtain uncertainty and evidence estimates from this subspace by using the Hessian.
 - Look at typical dimensionality of sequential/recurrent nns.
