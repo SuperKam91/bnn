@@ -48,6 +48,12 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - Basically, uses nn with inputs and outputs of parameters I don't have, to make classifications and regressions, to make decisions on how many PCA components to use, the values of their coefficients, and the value of the emission at key astrophysical points.
 
+- For nns, use one hidden layer with 40 neurons, using the Levenberg–Marquardt algorithm to minimise the cost function, which I believe uses second order gradient information (and isn't implemented in tf as it only has first order methods).
+
+- The bagged trees algorithm is used for the classification problem. This algorithm ﬁts many decision trees, each time using a diﬀerent subset of the training set, and the decision is made by voting. After optimisation they choose to use bagged trees with 30 tree learners and the tree size was chosen using 5-fold cross-validation. 
+
+- To me it seems like machine learning is a relatively small part of this work. Much more time and effort is focused on the understanding of the underlying physics, and constructiing this pipeline of analyses than the actual training of regression/classification functions.
+
 # other stuff
 
 - Compare performance of different architectures, different granularity of stochastic hyperparameters on Boston housing dataset in terms of Evidence and test set errors.
