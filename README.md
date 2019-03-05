@@ -19,9 +19,14 @@ https://www.overleaf.com/5218885132gxxndzvrfhfn
 - Bayesian GANs have been shown to give superior performance due to their tendency not to get stuck in local optima, which occurs in GAN training when the generative model finds an 'easy' solution which fools the discriminator.
 
 - ResNets with one neuron per layer have been shown to satisfy their own universal approximation theorem, meaning they can approximate a function (with certain restrictions) to an arbitrary level of precision, as the length of the network approaches infinity. Since it is of Resnet architecture, each layer should be the same size dimension as the input layer. 
+
 However looking at the Wikipedia example (a_2 = g(z_1 + a_0)), this can arise in two ways. if a_0 has size 1 x n, a_1 can be forced to have the same size if a_1 = w_1 * a_0 + b_1 with w_1 having size 1 x 1, or it can be given by a_1 = a_0 * w_1 + b_1 with w_1 having size n x n. Thus odd indexed layers have dimensionality 1 + n or n * n + n and the even layers have no learned parameters.
-In the universal approximation paper, the architecture and dimensions seem somewhat different, and describes it in terms of 'blocks'. It appears that a_2 is given by a_2 = w_2 * g(a_0 * w_1 + b_1) + a_0 with w_1 having size n x 1 and w_2 1 x n. It is interesting that the second layer doesn't have a bias, or an activation. I assume the output of each block is used as the input to the next. The final layer is a linear (potentially multi-neuron) layer. Thus each block has 2*n + 1 parameters.
-I think the original ResNet paper is the same as this.
+
+In the universal approximation paper, the architecture and dimensions seem somewhat different, and describes it in terms of 'blocks'. It appears that a_2 is given by a_2 = w_2 * g(a_0 * w_1 + b_1) + a_0 with w_1 having size n x 1 and w_2 1 x n. It is interesting that the second layer doesn't have a bias, or an activation. I assume the output of each block is used as the input to the next. With this architecture each block corresponds to a one neuron layer followed by an n-wide layer. Thus each block has 2*n + 1 parameters, n + 1 for the first layer, and n for the second.
+
+The coursera version is the same as the universal approximation paper, but the second layer of each block contains a bias and an activation over the whole input, i.e. a_2 = g(w_2 * g(a_0 * w_1 + b_1) + b_2 + a_0). Thus each block has 3*n + 1 parameters, n + 1 for the first layer, and 2n for the second (n for the weights and n for the biases).
+
+ I believe this is the exact version introduced in the original ResNet paper. The final layer is a linear (potentially multi-neuron) layer. 
 In paper, ResNet does better than wider NN for simple example (both are tested up to 5 layers).
 
 - Look at hyperspherical energy paper
