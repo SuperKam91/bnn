@@ -287,3 +287,14 @@ def balanced_accuracy(y_true, y_pred):
 	y_pred_d, y_true_d = decode_onehot_outputs(y_true, y_pred)
 	return sklearn.metrics.balanced_accuracy_score(y_true_d, y_pred_d)
 
+def twenty_one_cm_rmse(y_true, y_pred, discretise = False):
+	"""
+	used in 21cm paper to evaluate performance
+	"""
+	if discretise:
+		y_p = tools.round_probabilities(y_pred)
+	else:
+		y_p = y_pred
+	return np.sqrt(np.mean((y_true - y_pred)**2.)) / np.max(np.abs(y_pred))
+
+

@@ -145,6 +145,15 @@ void sqrt_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::
 	theta_m = theta_m.array().inverse().sqrt();
 }
 
+Eigen::VectorXd recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	return (gamma_prior::operator()(p_m)).array().inverse();
+}
+
+void recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	gamma_prior::operator()(p_m, theta_m);
+	theta_m = theta_m.array().inverse();
+}
+
 Eigen::VectorXd forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m) {
 	long int n = p_m.size();
 	Eigen::VectorXd t_m(n);
@@ -340,6 +349,16 @@ void sorted_sqrt_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eige
 	sqrt_recip_gamma_prior::operator()(t_m, theta_m);
 }
 
+Eigen::VectorXd sorted_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	return recip_gamma_prior::operator()(t_m);
+}
+
+void sorted_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m) {
+	Eigen::VectorXd t_m = forced_identifiability_transform(p_m);
+	recip_gamma_prior::operator()(t_m, theta_m);
+}
+
 using namespace std::placeholders;
 inverse_prior::inverse_prior(std::vector<uint> prior_types_, std::vector<double> prior_hyperparams_, std::vector<uint> dependence_lengths_, std::vector<uint> param_prior_types_, uint n_dims_) :
 	prior_types(prior_types_),
@@ -396,34 +415,40 @@ std::vector<base_prior *> inverse_prior::get_ppf_ptr_vec() {
 			ppf_ptr_vec.push_back(new sqrt_recip_gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 10) {
-			ppf_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new recip_gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 11) {
-			ppf_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 12) {
-			ppf_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 13) {
-			ppf_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 14) {
-			ppf_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 15) {
-			ppf_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 16) {
-			ppf_ptr_vec.push_back(new sorted_cauchy_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 17) {
-			ppf_ptr_vec.push_back(new sorted_delta_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_cauchy_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 18) {
-			ppf_ptr_vec.push_back(new sorted_gamma_prior(hyperparam1, hyperparam2));
+			ppf_ptr_vec.push_back(new sorted_delta_prior(hyperparam1, hyperparam2));
 		}
 		else if (prior_types.at(i) == 19) {
+			ppf_ptr_vec.push_back(new sorted_gamma_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 20) {
 			ppf_ptr_vec.push_back(new sorted_sqrt_rec_gam_prior(hyperparam1, hyperparam2));
+		}
+		else if (prior_types.at(i) == 21) {
+			ppf_ptr_vec.push_back(new sorted_rec_gam_prior(hyperparam1, hyperparam2));
 		}
 	}
 	return ppf_ptr_vec;

@@ -10,6 +10,7 @@ import PyPolyChord
 import PyPolyChord.settings
 import inverse_priors
 import inverse_stoc_hyper_priors as isp
+import inverse_stoc_var_hyper_priors as isvp
 import polychord_tools
 import input_tools
 import prior_tests
@@ -21,7 +22,7 @@ class np_model():
 	(same could probably be said for keras_model as well), might do this if i ever get
 	time.
 	"""
-	def __init__(self, np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr = [], b_trainable_arr = []):
+	def __init__(self, np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr = [], b_trainable_arr = [], n_stoc_var = 0):
 		"""
 		subset of tf_model init()
 		"""
@@ -40,6 +41,7 @@ class np_model():
 		self.get_weight_shapes(layer_sizes, m_trainable_arr, b_trainable_arr) 
 		self.model = np_nn
 		self.LL_var = 1.
+		self.n_stoc_var = n_stoc_var 
 
 	def get_weight_shapes(self, layer_sizes, m_trainable_arr, b_trainable_arr):
 		"""
@@ -59,6 +61,30 @@ class np_model():
 		if b_trainable_arr[-1]:
 			self.weight_shapes.append((self.num_outputs,))
 
+	def gauss_LL_c(self):
+		"""
+		copied from keras_forward.py
+		"""
+		return -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+
+	def categorical_crossentropy_LL_c(self):
+		"""
+		copied from keras_forward.py
+		"""
+		return 0.
+
+	def av_gauss_LL_c(self):
+		"""
+		copied from keras_forward.py
+		"""
+		return -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+
+	def av_categorical_crossentropy_LL_c(self):
+		"""
+		copied from keras_forward.py
+		"""
+		return 0.
+
 	def setup_LL(self, ll_type):
 		"""
 		adapted from tf_model version
@@ -72,30 +98,32 @@ class np_model():
 		may be worth testing again if i ever consider more complicated covariances.
 		"""
 		if self.m <= self.batch_size:
-		    self.batch_generator = None
+			self.batch_generator = None
 		else:
-		    self.batch_generator = self.create_batch_generator()
+			self.batch_generator = self.create_batch_generator()
 		if ll_type == 'gauss':
 		    #temporary
-		    self.LL_dim = self.batch_size * self.num_outputs
-		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
-		    self.LL = self.calc_gauss_LL
-		    #longer term solution (see comments above in keras_forward)
-		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
+			self.LL_dim = self.batch_size * self.num_outputs
+			self.LL_const_f = self.gauss_LL_c
+			self.LL = self.calc_gauss_LL
+			#longer term solution (see comments above in keras_forward)
+			#self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
 		elif ll_type == 'categorical_crossentropy':
-		    self.LL_const = 0.
-		    self.LL = self.calc_cross_ent_LL
+			self.LL_const_f = categorical_crossentropy_LL_c
+			self.LL = self.calc_cross_ent_LL
 		elif ll_type == 'av_gauss':
-		    self.LL_dim = self.batch_size * self.num_outputs
-		    self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
-		    self.LL = self.calc_av_gauss_LL
-		    #longer term solution (see comments above in keras_forward)
-		    #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
+			self.LL_dim = self.batch_size * self.num_outputs
+			self.LL_const_f = av_gauss_LL_c
+			self.LL = self.calc_av_gauss_LL
+			#longer term solution (see comments above in keras_forward)
+			#self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
 		elif ll_type == 'av_categorical_crossentropy':
-		    self.LL_const = 0.
-		    self.LL = self.calc_av_cross_ent_LL
+			self.LL_const_f = av_categorical_crossentropy_LL_c
+			self.LL = self.calc_av_cross_ent_LL
 		else:
-		    raise NotImplementedError
+			raise NotImplementedError
+		self.LL_const = self.LL_const_f() 
+		self.stoc_var_setup()
 
 	def calc_gauss_LL(self, x, y, weights):
 		"""
@@ -139,24 +167,47 @@ class np_model():
 	    """
 	    pred = self.model(x, weights)
 	    self.LL_const = -1 * np.log((pred**(1. / self.batch_size)).prod(axis = 0).sum())
-	    return self.LL_const
 	    return 1. / self.batch_size * np.sum(y * np.log(pred)) + self.LL_const
+
+	def stoc_var_setup(self):
+		"""
+		copied from keras_forward.py
+		"""
+		if self.n_stoc_var == 0:
+			self.stoc_var_update = self.no_stoc_var_update
+		elif self.n_stoc_var == 1:
+			self.stoc_var_update = self.one_stoc_var_update
+		else:
+			print "only 0 or 1 stoc variances currently supported"
+			raise NotImplementedError
+
+	def no_stoc_var_update(self, LL_vars):
+		"""
+		copied from keras_forward.py
+		"""
+		return None
+
+	def one_stoc_var_update(self, LL_vars):
+		"""
+		copied from keras_forward.py
+		"""
+		self.LL_var = LL_vars[0]
+		self.LL_const = self.LL_const_f()
 
 	def __call__(self, oned_weights):
 		"""
 		sets arrays of weights to be used in nn, gets batch and evaluates LL
-		n.b. if non-constant var, LL_var and LL_const need to be updated before
-		calculating LL
 		"""
+		weights = self.get_np_weights(oned_weights[self.n_stoc_var:])
 		x_batch, y_batch = self.get_batch()
-		weights = self.get_np_weights(oned_weights)
+		self.stoc_var_update(oned_weights[:self.n_stoc_var])
 		LL = self.LL(x_batch, y_batch, weights)
 		return LL
 
 	def test_output(self, oned_weights):
 		print "one-d weights:"
 		print oned_weights
-		weights = self.get_np_weights(oned_weights)
+		weights = self.get_np_weights(oned_weights[self.n_stoc_var:])
 		x_batch, y_batch = self.get_batch()
 		print "input batch:"
 		print x_batch
@@ -164,6 +215,9 @@ class np_model():
 		print y_batch
 		print "nn output:"
 		print self.model(x_batch, weights)
+		self.stoc_var_update(oned_weights[:self.n_stoc_var])
+		print "LL var and const"
+		print self.LL_var, self.LL_const
 		print "log likelihood:"
 		print self.LL(x_batch, y_batch, weights) 
 
@@ -230,61 +284,85 @@ class np_model():
 
 def main(run_string):
 	###### load training data
-	data = 'FIFA_2018_Statistics'
+	data = 'bh_50'
 	data_suffix = '_tr_1.csv'
-	data_dir = '../../data/kaggle/'
+	data_dir = '../../data/uci/'
 	data_prefix = data_dir + data
 	x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
+	x_tr = np.genfromtxt('../../data/linear_input_data.txt', delimiter = ',')
+	y_tr = x_tr
 	batch_size = x_tr.shape[0]
 	###### get weight information
-	weights_dir = '../../data/'
+	weights_dir = '../../data/' #for forward test
 	a1_size = 0
-	layer_sizes = []
-	m_trainable_arr = [True]
-	b_trainable_arr = [True]
 	num_inputs = tools.get_num_inputs(x_tr)
 	num_outputs = tools.get_num_outputs(y_tr)
+	layer_sizes = [1, num_inputs] * 2
+	m_trainable_arr = [True, True] * 2 + [False]
+	b_trainable_arr = [True, True] * 2 + [False]
 	num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
 	###### check shapes of training data
 	x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
+	###### setup prior
+	hyper_type = "deterministic" # "stochastic" or "deterministic"
+	var_type = "deterministic" # "stochastic" or "deterministic"
+	weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
+	if hyper_type == "deterministic" and var_type == "deterministic":
+		prior_types = [4]
+		prior_hyperparams = [[0., 1.]]
+		param_prior_types = [0]
+		prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
+		n_stoc = 0
+		n_stoc_var = 0
+	elif hyper_type == "stochastic" and var_type == "deterministic":
+		granularity = 'single'
+		hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
+		hyperprior_types = [9]
+		prior_types = [4]
+		hyperprior_params = [[1. / 2., 1. / (2. * 100)]]
+		prior_hyperparams = [0.]
+		param_hyperprior_types = [0]
+		param_prior_types = [0]
+		n_stoc = len(hyper_dependence_lengths)
+		prior = isp.inverse_stoc_hyper_prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, num_weights)
+		n_stoc_var = 0
+	elif hyper_type == "stochastic" and var_type == "stochastic":
+		granularity = 'single'
+		hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
+		var_dependence_lengths = [1]
+		n_stoc_var = len(var_dependence_lengths)
+		hyperprior_types = [9]
+		var_prior_types = [10]
+		prior_types = [4]
+		hyperprior_params = [[1. / 2., 1. / (2. * 100)]]
+		var_prior_params = [[1. / 2., 1. / (2. * 100)]]
+		prior_hyperparams = [0.]
+		param_hyperprior_types = [0]
+		var_param_prior_types = [0]
+		param_prior_types = [0]
+		n_stoc = len(hyper_dependence_lengths)
+		prior = isvp.inverse_stoc_var_hyper_prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, num_weights)
+	###### test prior output from nn setup
+	if "nn_prior_test" in run_string:
+		prior_tests.nn_prior_test(prior, n_stoc + n_stoc_var + num_weights)
 	#set up np model
-	np_nn = npms.slp_sm
-	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr)
-	ll_type = 'av_categorical_crossentropy' # 'gauss', 'av_gauss', 'categorical_crossentropy', 'av_categorical_crossentropy'
+	np_nn = npms.mlp_ResNet_2
+	npm = np_model(np_nn, x_tr, y_tr, batch_size, layer_sizes, m_trainable_arr, b_trainable_arr, n_stoc_var)
+	ll_type = 'gauss' # 'gauss', 'av_gauss', 'categorical_crossentropy', 'av_categorical_crossentropy'
 	npm.setup_LL(ll_type)
 	###### test llhood output
 	if "forward_test_linear" in run_string:
-		forward_tests.forward_test_linear([npm], num_weights, weights_dir)
-	###### setup prior
-    if hyper_type == "deterministic":
-        prior_types = [4]
-        prior_hyperparams = [[0., 1.]]
-        param_prior_types = [0]
-        prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
-        n_stoc = 0
-    elif hyper_type == "stochastic":
-        granularity = 'single'
-        hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
-        hyperprior_types = [9]
-        prior_types = [4]
-        hyperprior_params = [[0.1 / 2., 0.1 / (2. * 100)]]
-        prior_hyperparams = [0.]
-        param_hyperprior_types = [0]
-        param_prior_types = [0]
-        n_stoc = len(hyper_dependence_lengths)
-        prior = isp.inverse_stoc_hyper_prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, num_weights)
-	###### test prior output from nn setup
-	if "nn_prior_test" in run_string:
-		prior_tests.nn_prior_test(prior, n_stoc + num_weights)
+		forward_tests.forward_test_linear([npm], num_weights + n_stoc_var, weights_dir)
 	###### setup polychord
 	nDerived = 0
-	settings = PyPolyChord.settings.PolyChordSettings(n_stoc + num_weights, nDerived)
+	settings = PyPolyChord.settings.PolyChordSettings(n_stoc + n_stoc_var + num_weights, nDerived)
 	settings.base_dir = './np_chains/'
-	settings.file_root = data + "_slp_sm"
-	settings.nlive = 200
+	settings.file_root = data + "_slp_sh_sv_sm"
+	settings.nlive = 1000
 	###### run polychord
 	if "polychord1" in run_string:
-		PyPolyChord.run_polychord(npm, n_stoc, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+		PyPolyChord.run_polychord(npm, n_stoc, n_stoc_var, num_weights, nDerived, settings, prior, polychord_tools.dumper)
 
 if __name__ == '__main__':
 	run_string = 'forward_test_linear'

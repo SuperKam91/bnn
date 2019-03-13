@@ -11,7 +11,7 @@
 void run_polychord_wrap(bool profiling) {
     //some of default settings changed to sensible values by kj
     int nDims, nDerived;
-    nDims = static_cast<int>(e_n_weights + e_n_stoc);
+    nDims = static_cast<int>(e_n_weights + e_n_stoc + e_n_stoc_var);
     nDerived = 0;
 
     Settings settings(nDims,nDerived);
@@ -65,18 +65,21 @@ void run_polychord_wrap(bool profiling) {
     settings.boost_posterior= 0.0;
     //settings.boost_posterior= 5.0;
 
-    if (e_hyper_type == "deterministic") {
+    if ((e_hyper_type == "deterministic") && (e_var_type == "deterministic")) {
         run_polychord(loglikelihood,prior,dumper,settings);
     }
-    else if (e_hyper_type == "stochastic") {
+    else if ((e_hyper_type == "stochastic") && (e_var_type == "deterministic")) {
         run_polychord(loglikelihood,sh_prior,dumper,settings);
+    }
+    else if ((e_hyper_type == "stochastic") && (e_var_type == "stochastic")) {
+        run_polychord(loglikelihood,svh_prior,dumper,settings);
     }
 }
 
 double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
 {
-    Eigen::Map<Eigen::VectorXd> w_m(theta, e_n_stoc + e_n_weights);
-    return e_nn(w_m.segment(e_n_stoc, e_n_weights));
+    Eigen::Map<Eigen::VectorXd> w_m(theta, e_n_stoc + e_n_stoc_var + e_n_weights);
+    return e_nn(w_m.segment(e_n_stoc, e_n_stoc_var + e_n_weights));
 }
 
 void prior (double cube[], double theta[], int nDims)
@@ -92,6 +95,14 @@ void sh_prior (double cube[], double theta[], int nDims)
     Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_stoc + e_n_weights);
     e_sh_ip(cube_m, theta_m);
 }
+
+void svh_prior (double cube[], double theta[], int nDims)
+{
+    Eigen::Map<Eigen::VectorXd> cube_m(cube, e_n_stoc + e_n_stoc_var + e_n_weights);
+    Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_stoc + e_n_stoc_var + e_n_weights);
+    e_svh_ip(cube_m, theta_m);
+}
+
 
 void setup_loglikelihood()
 {

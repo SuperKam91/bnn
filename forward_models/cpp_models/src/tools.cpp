@@ -357,13 +357,18 @@ std::vector<unsigned int> get_degen_dependence_lengths4(const std::vector<unsign
 	}
 }
 
-std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const std::string & granularity) {
+std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const std::string & granularity,  const std::vector<bool> & trainable_w_v, const std::vector<bool> & trainable_b_v) {
 	if (granularity == "single") {
 		std::vector<unsigned int> hyper_dependence_lengths = {1};
 		return hyper_dependence_lengths;
 	}
 	else if (granularity == "layer") {
-		return calc_num_weights_layers(weight_shapes);
+		if ((trainable_w_v.size() == 0) && (trainable_b_v.size() == 0)) {
+			return calc_num_weights_layers(weight_shapes);
+		}
+		else {
+			return calc_num_weights_layers(weight_shapes, trainable_w_v, trainable_b_v);	
+		}
 	}
 	else if (granularity == "input_size") {
 		bool indp = false;

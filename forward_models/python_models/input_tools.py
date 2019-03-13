@@ -16,14 +16,14 @@ def get_x_y_tr_data(data_prefix, data_suffix):
 def get_weight_data(weights_file, length):
 	return np.genfromtxt(weights_file, max_rows = length)
 
-def get_chains_data(chains_file):
+def get_chains_data(chains_file, n_stoc = 0, n_stoc_var = 0):
 	"""
 	returns normalised posterior weights,
 	LL, and parameter values
 	"""
 	data = np.genfromtxt(chains_file)
 	weight_norm = data[:,0].sum()
-	return data[:,0] / weight_norm, -0.5 * data[:, 1], data[:, 2:], weight_norm
+	return data[:,0] / weight_norm, -0.5 * data[:, 1], data[:, 2: 2 + n_stoc], data[:, 2 + n_stoc: 2 + n_stoc + n_stoc_var], data[:, 2 + n_stoc + n_stoc_var:], weight_norm
 
 def get_chains_data2(chains_file):
 	"""

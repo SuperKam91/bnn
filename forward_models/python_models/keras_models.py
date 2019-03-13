@@ -82,3 +82,62 @@ def mlp_1_sm_r(num_inputs, num_outputs, layer_sizes, reg_coeffs):
     a1 = Dense(layer_sizes[0], activation = 'tanh', kernel_regularizer = Regularisers.l2(reg_coeffs[0]), bias_regularizer = Regularisers.l2(reg_coeffs[1]))(a0)
     prediction = Dense(num_outputs, activation='softmax', kernel_regularizer = Regularisers.l2(reg_coeffs[2]), bias_regularizer = Regularisers.l2(reg_coeffs[3]))(a1)
     return Model(inputs = a0, outputs = prediction)
+
+def uap_mlp_ResNet_block(num_inputs, a0):
+    """
+    in this architecture each block consists of two layers, the first
+    being one neuron wide, the second being num_inputs wide.
+    the first layer contains a bias and a ReLu activation,
+    the second does not.
+    """
+    a1 = Dense(1, activation = 'relu')(a0)
+    a2_part = Dense(num_inputs, activation = 'linear', use_bias = False)(a1)
+    return tf.keras.layers.Add()([a0, a2_part])
+
+def coursera_mlp_ResNet_block(num_inputs, a0):
+    """
+    same as uap_mlp_ResNet_block() but second layer also contains
+    bias and ReLu activation. 
+    """
+    a1 = Dense(1, activation = 'relu')(a0)
+    z2_part = Dense(num_inputs, activation = 'linear')(a1)
+    z2 = tf.keras.layers.Add()([a0, z2_part])
+    return tf.keras.layers.Activation('relu')(z2)
+
+
+def mlp_ResNet_1(num_inputs, num_outputs, layer_sizes, ResNet_type = 'uap'):
+    """
+    layer_sizes not actually needed, just included in signature
+    for consistency.
+    could build a function to handle arbitrary num_blocks, but cba init.
+    could just pass num_blocks as argument, as model is created in main,
+    but don't to be consistent with np, tf and cpp implementations.
+    """
+    num_blocks = 1
+    if ResNet_type == 'uap':
+        ResNet_block = uap_mlp_ResNet_block
+    elif ResNet_type == 'coursera':
+        ResNet_block = coursera_mlp_ResNet_block
+    else:
+        raise NotImplementedError
+    a0 = Input(shape = (num_inputs,))
+    inputs = a0
+    for _ in range(num_blocks):
+        a2 = ResNet_block(num_inputs, a0)
+        a0 = a2
+    return Model(inputs = inputs, outputs = a2)
+
+def mlp_ResNet_2(num_inputs, num_outputs, layer_sizes, ResNet_type = 'coursera'):
+    num_blocks = 2
+    if ResNet_type == 'uap':
+        ResNet_block = uap_mlp_ResNet_block
+    elif ResNet_type == 'coursera':
+        ResNet_block = coursera_mlp_ResNet_block
+    else:
+        raise NotImplementedError
+    a0 = Input(shape = (num_inputs,))
+    inputs = a0
+    for _ in range(num_blocks):
+        a2 = ResNet_block(num_inputs, a0)
+        a0 = a2
+    return Model(inputs = inputs, outputs = a2)

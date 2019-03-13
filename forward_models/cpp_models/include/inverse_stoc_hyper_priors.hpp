@@ -97,6 +97,14 @@ public:
 	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b);
 };
 
+class sh_recip_gamma_prior: public sh_gamma_prior {
+public:
+	using sh_gamma_prior::sh_gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m, double a, double b);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, double a, double b);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b);
+};
+
 //n.b. following are same as ones inplemented in inverse_priors.cpp, just included for completeness
 //------------------------------------------------------------------------------------------------------------
 
@@ -203,10 +211,18 @@ public:
 	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b);
 };
 
+class sh_sorted_rec_gam_prior: public sh_recip_gamma_prior {
+public:
+	using sh_recip_gamma_prior::sh_recip_gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m, double a, double b);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, double a, double b);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b);
+};
+
 class sh_inverse_prior {
 public:
 	sh_inverse_prior(std::vector<uint>, std::vector<uint>, std::vector<double>, std::vector<double>, std::vector<uint>, std::vector<uint>, std::vector<uint>, std::vector<uint>, uint, uint);
-	~sh_inverse_prior();
+	virtual ~sh_inverse_prior();
 	Eigen::VectorXd init_stoc_hypers();
 	Eigen::VectorXd fill_det_hypers();
 	void hyperprior_call_ind(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref<Eigen::VectorXd> theta_m);

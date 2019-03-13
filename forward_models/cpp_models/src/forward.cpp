@@ -9,8 +9,10 @@
 #include "forward.hpp"
 #include "loglikelihoods.hpp"
 
+using namespace std::placeholders; //for bind for ptr to class methods in stoc var setup
+
 //https://stackoverflow.com/questions/18365532/should-i-pass-an-stdfunction-by-const-reference for whether to pass std::function by val or const ref
-forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_) : 
+forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, uint n_dims_, uint n_stoc_var_) : 
 	num_inputs(num_inputs_), 
 	num_outputs(num_outputs_), 
 	m(m_), 
@@ -31,12 +33,16 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
 	b_c(1.), 
 	rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
+    LL_c_ptr(nullptr),
+    LL_stoc_var_update_ptr(nullptr),
     nn_ptr(nn_ptr_),
-    LL_dim(batch_size * num_outputs) {
+    LL_dim(batch_size * num_outputs),
+    n_dims(n_dims_), 
+    n_stoc_var(n_stoc_var_) {
 }
 
 //constructor for frozen layers
-forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool> trainable_v) : 
+forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool> trainable_v, uint n_dims_, uint n_stoc_var_) : 
     num_inputs(num_inputs_), 
     num_outputs(num_outputs_), 
     m(m_), 
@@ -57,12 +63,16 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     b_c(1.), 
     rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
+    LL_c_ptr(nullptr),
+    LL_stoc_var_update_ptr(nullptr),
     nn_ptr(nn_ptr_),
-    LL_dim(batch_size * num_outputs) {
+    LL_dim(batch_size * num_outputs),
+    n_dims(n_dims_), 
+    n_stoc_var(n_stoc_var_) {
 }
 
 //constructor for frozen weight matrices or bias vectors
-forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool> trainable_w_v, std::vector<bool> trainable_b_v) : 
+forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint batch_size_, std::vector<uint> layer_sizes_, std::string x_path_, std::string y_path_, std::function <Eigen::MatrixXd (Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > , std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & )> nn_ptr_, std::vector<bool> trainable_w_v, std::vector<bool> trainable_b_v, uint n_dims_, uint n_stoc_var_) : 
     num_inputs(num_inputs_), 
     num_outputs(num_outputs_), 
     m(m_), 
@@ -83,8 +93,13 @@ forward_prop::forward_prop(uint num_inputs_, uint num_outputs_, uint m_, uint ba
     b_c(1.), 
     rand_m_ind(Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1)), 
     LL_ptr(nullptr),
+    LL_c_ptr(nullptr),
+    LL_stoc_var_update_ptr(nullptr),
     nn_ptr(nn_ptr_),
-    LL_dim(batch_size * num_outputs) {}
+    LL_dim(batch_size * num_outputs),
+    n_dims(n_dims_), 
+    n_stoc_var(n_stoc_var_) {
+    }
 
 //in python we infer input/output/m from data files. however, here it is easier to input these manually
 //so that vectors holding data from files can be allocated sufficient size before reading from files
@@ -283,34 +298,57 @@ void forward_prop::setup_LL(std::string LL_type_) {
     LL_type = LL_type_;
     if (LL_type == "gauss") {
         LL_ptr = calc_gauss_ll;
-        LL_norm = -0.5 * LL_dim * (std::log(2. * M_PI) + std::log(LL_var));
+        LL_c_ptr = calc_gauss_c;
     }
     else if (LL_type == "categorical_crossentropy") {
         LL_ptr = calc_ce_ll;
-        LL_norm = 0.;
+        LL_c_ptr = calc_ce_c;
     }
     else if (LL_type == "av_gauss") {
         LL_ptr = calc_av_gauss_ll;
-        LL_norm = -0.5 * LL_dim * (std::log(2. * M_PI) + std::log(LL_var) + std::log(LL_dim));
+        LL_c_ptr = calc_av_gauss_c;
     }
     else if (LL_type == "av_categorical_crossentropy") {
         LL_ptr = calc_av_ce_ll;
-        LL_norm = 0.;
+        LL_c_ptr = calc_av_ce_c;
     }
     else if (LL_type == "dummy") {
         LL_ptr = calc_d_ll;
-        LL_norm = 0.;
+        LL_c_ptr = calc_d_c;
     }
     else {
         std::cout<< "other llhoods not implemented yet. llhood const set to zero, LL ptr is to nullptr." << std::endl;
     }
+    LL_norm = LL_c_ptr(LL_var, LL_dim);
+    LL_stoc_var_setup();
 }
+
+void forward_prop::LL_stoc_var_setup() {
+    if (n_stoc_var == 0) {
+        LL_stoc_var_update_ptr = std::bind(&forward_prop::no_stoc_var_update, this, _1);
+    }
+    else if (n_stoc_var == 1) {
+        LL_stoc_var_update_ptr = std::bind(&forward_prop::one_stoc_var_update, this, _1);
+    }
+    else {
+        std::cout << "more than one stoc var not implemented yet." << std::endl;
+    }
+}
+
+void forward_prop::no_stoc_var_update(Eigen::Ref<Eigen::VectorXd> vars) {
+} 
+
+void forward_prop::one_stoc_var_update(Eigen::Ref<Eigen::VectorXd> vars) {
+    LL_var = vars(0);
+    LL_norm = LL_c_ptr(LL_var, LL_dim);
+} 
 
 //discussion found on inverse_prior::prior_call_by_dependence_lengths applies to the nn calculations here, 
 //i.e. taking pred as reference argument to nn_ptr and overwriting in-function rather than assigning to return
 double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
     double LL;
-    std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w);
+    LL_stoc_var_update_ptr(w.segment(0, n_stoc_var));
+    std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w.segment(n_stoc_var, n_dims));
     Eigen::MatrixXd pred; 
     if (m == batch_size) {
         pred = nn_ptr(x_tr_m, weight_matrices);
@@ -332,7 +370,8 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
 
 void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
     double LL;
-    std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w);
+    LL_stoc_var_update_ptr(w.segment(0, n_stoc_var));
+    std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > weight_matrices = get_weight_matrices(w.segment(n_stoc_var, n_dims));
     Eigen::MatrixXd pred;
     std::cout << "one-d weights:" << std::endl;
     std::cout << w << std::endl;
@@ -355,6 +394,10 @@ void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
         pred = nn_ptr(x_tr_b, weight_matrices);
         LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
     }
+    std::cout << "LL var" << std::endl;
+    std::cout << LL_var << std::endl;
+    std::cout << "LL norm" << std::endl;
+    std::cout << LL_norm << std::endl;
     std::cout << "nn output:" << std::endl;
     std::cout << pred << std::endl;
     std::cout << "log likelihood:" << std::endl;

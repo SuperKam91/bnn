@@ -310,7 +310,7 @@ def get_degen_dependence_lengths4(weight_shapes, independent = False):
 		dependence_lengths.extend((weight_shapes[-2][0] + 1) * weight_shapes[-2][1] * [1]) #+1 is for biases. assumes 2nd dim of final two weight_shapes are same (should be)
 	return dependence_lengths
 
-def get_hyper_dependence_lengths(weight_shapes, granularity):
+def get_hyper_dependence_lengths(weight_shapes, granularity, m_trainable_arr = None, b_trainable_arr = None):
 	"""
 	calculates hyper dependence lengths from weight shapes based on granularity.
 	if granularity is single, means a single set (two) of hyperparams is used for
@@ -325,7 +325,10 @@ def get_hyper_dependence_lengths(weight_shapes, granularity):
 	if granularity == 'single':
 		return [1]
 	elif granularity == 'layer':
-		return calc_num_weights_layers(weight_shapes)
+		if m_trainable_arr and b_trainable_arr:
+			return calc_num_weights_layers(weight_shapes, m_trainable_arr, b_trainable_arr)
+		else:
+			return calc_num_weights_layers(weight_shapes)
 	elif granularity == 'input_size':
 		return get_degen_dependence_lengths(weight_shapes)
 

@@ -5,6 +5,7 @@ import numpy as np
 import inverse_priors as ip
 import tools
 import inverse_stoc_hyper_priors as isp
+import inverse_stoc_var_hyper_priors as isvp
 
 def nn_prior_test(prior, n_dims):
 	"""
@@ -662,9 +663,9 @@ def inverse_stoc_hyper_priors_test14():
 	real nn arch with 16 nn params, two hyperparams, input_size granularity, 
 	degen dependent params
 	"""
-	num_inputs = 2
-	layer_sizes = [3]
-	num_outputs = 2
+	num_inputs = 1
+	layer_sizes = [3, 2]
+	num_outputs = 1
 	print "num weights"
 	n_dims = tools.calc_num_weights(num_inputs, layer_sizes, num_outputs)
 	print tools.calc_num_weights(num_inputs, layer_sizes, num_outputs)
@@ -712,5 +713,92 @@ def inverse_stoc_hyper_priors_test14():
 	print isp.laplace_prior()(p[24], u[15], v[15])
 	print isp.gaussian_prior()(p[25], u[16], v[16])
 
+def inverse_stoc_var_hyper_priors_test1():
+	"""
+	single hyperparam, single var param, single param, gamma hyper, gamma var, gauss prior
+	"""
+	hyperprior_types = [9]
+	var_prior_types = [10]
+	prior_types = [4]
+	hyperprior_params = [[1., 2.]]
+	var_prior_params = [[1., 2.]]
+	prior_hyperparams = [0.]
+	hyper_dependence_lengths = [1]
+	var_dependence_lengths = [1]
+	dependence_lengths = [1]
+	param_hyperprior_types = [0]
+	var_param_prior_types = [0]
+	param_prior_types = [0]
+	n_stoc = 1
+	n_stoc_var = 1
+	n_dims = 1
+	prior = isvp.inverse_stoc_var_hyper_prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims)
+	p = np.array([0.1, 0.1, 0.6])
+	prior(p)
+	print isp.recip_gamma_prior()(p[1:2], 1., 2.)
+	print isp.gaussian_prior()(p[2:], 0., 4.35688457)
+
+def inverse_stoc_var_hyper_priors_test2():
+	"""
+	4 hyperparam, 1 var param, 6 params, mix of gamma, delta hyper, gamma var, mix of gauss, laplace prior
+	"""
+	hyperprior_types = [9, 7, 9, 7]
+	var_prior_types = [10]
+	prior_types = [4, 5, 4]
+	hyperprior_params = [[1., 2.], [1., 1.], [1., 5.], [3., 1.]]
+	var_prior_params = [[1., 2.]]
+	prior_hyperparams = [0., 1., 2.]
+	hyper_dependence_lengths = [1, 3, 1, 1]
+	var_dependence_lengths = [1]
+	dependence_lengths = [1, 3, 2]
+	param_hyperprior_types = [1, 0, 3, 2]
+	var_param_prior_types = [0]
+	param_prior_types = [1, 2, 0]
+	n_stoc = 4
+	n_stoc_var = 1
+	n_dims = 6
+	prior = isvp.inverse_stoc_var_hyper_prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims)
+	p = np.array([0.1, 0.5, 0.6, 0.7, 0.5, 0.8, 0.9, 0.4, 0.2, 0.1, 0.5])
+	prior(p)
+	v = [1., 1.6986436, 1.6986436, 1.6986436, 3., 2.03787088]
+	print isp.recip_gamma_prior()(p[-7], 1., 2.)
+	print isp.laplace_prior()(p[-6], 1., v[0])
+	print isp.gaussian_prior()(p[-5], 2., v[1])
+	print isp.gaussian_prior()(p[-4], 2., v[2])
+	print isp.gaussian_prior()(p[-3], 2., v[3])
+	print isp.gaussian_prior()(p[-2], 0., v[4])
+	print isp.gaussian_prior()(p[-1], 0., v[5])
+
+def inverse_stoc_var_hyper_priors_test3():
+	"""
+	4 hyperparam, 2 var param, 6 params, mix of gamma, delta hyper, delta and gamma var, mix of gauss, laplace prior
+	"""
+	hyperprior_types = [9, 7, 9, 7]
+	var_prior_types = [10, 7]
+	prior_types = [4, 5, 4]
+	hyperprior_params = [[1., 2.], [1., 1.], [1., 5.], [3., 1.]]
+	var_prior_params = [[1., 2.], [3., 3.]]
+	prior_hyperparams = [0., 1., 2.]
+	hyper_dependence_lengths = [1, 3, 1, 1]
+	var_dependence_lengths = [1, 1]
+	dependence_lengths = [1, 3, 2]
+	param_hyperprior_types = [1, 0, 3, 2]
+	var_param_prior_types = [1, 0]
+	param_prior_types = [1, 2, 0]
+	n_stoc = 4
+	n_stoc_var = 2
+	n_dims = 6
+	prior = isvp.inverse_stoc_var_hyper_prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims)
+	p = np.array([0.1, 0.5, 0.6, 0.7, 0.9, 0.5, 0.8, 0.9, 0.4, 0.2, 0.1, 0.5])
+	prior(p)
+	v = [1., 1.6986436, 1.6986436, 1.6986436, 3., 2.03787088]
+	print isp.recip_gamma_prior()(p[-7], 1., 2.)
+	print isp.laplace_prior()(p[-6], 1., v[0])
+	print isp.gaussian_prior()(p[-5], 2., v[1])
+	print isp.gaussian_prior()(p[-4], 2., v[2])
+	print isp.gaussian_prior()(p[-3], 2., v[3])
+	print isp.gaussian_prior()(p[-2], 0., v[4])
+	print isp.gaussian_prior()(p[-1], 0., v[5])
+
 if __name__ == '__main__':
-	inverse_stoc_hyper_priors_test14()
+	inverse_stoc_var_hyper_priors_test3()

@@ -32,7 +32,7 @@ std::vector<unsigned int> get_degen_dependence_lengths3(const std::vector<unsign
 
 std::vector<unsigned int> get_degen_dependence_lengths4(const std::vector<unsigned int> &, const bool &);
 
-std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> &, const std::string &);
+std::vector<unsigned int> get_hyper_dependence_lengths(const std::vector<unsigned int> & weight_shapes, const std::string & granularity, const std::vector<bool> & trainable_w_v = {}, const std::vector<bool> & trainable_b_v = {});
 
 std::vector<double> get_seq_vec(std::vector<double> seq_values, std::vector<unsigned int> seq_lengths);
 

@@ -36,7 +36,7 @@ def default_dumper(live, dead, logweights, logZ, logZerr):
     pass
 
 
-def run_polychord(loglikelihood, nStoc, nDims, nDerived, settings,
+def run_polychord(loglikelihood, nStoc, nStocVar, nDims, nDerived, settings,
                   prior=default_prior, dumper=default_dumper):
     """
     Runs PolyChord.
@@ -176,7 +176,7 @@ def run_polychord(loglikelihood, nStoc, nDims, nDerived, settings,
 
     def wrap_loglikelihood(theta, phi):
         #logL, phi[:] = loglikelihood(theta) #eliminated derived param, not needed for bnn. kj
-        logL = loglikelihood(theta[nStoc:]) #only pass theta associated with network parameters (not hyperprior params)
+        logL = loglikelihood(theta[nStoc:]) #only pass theta associated with network parameters and lhood var (not hyperprior params)
         return logL
 
     def wrap_prior(cube, theta):
@@ -186,7 +186,7 @@ def run_polychord(loglikelihood, nStoc, nDims, nDerived, settings,
     _PyPolyChord.run(wrap_loglikelihood,
                      wrap_prior,
                      dumper,
-                     nStoc + nDims,
+                     nStoc + nStocVar + nDims,
                      nDerived,
                      settings.nlive,
                      settings.num_repeats,

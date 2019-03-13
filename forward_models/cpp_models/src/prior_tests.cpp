@@ -6,6 +6,7 @@
 /* in-house code */
 #include "inverse_priors.hpp"
 #include "inverse_stoc_hyper_priors.hpp"
+#include "inverse_stoc_var_hyper_priors.hpp"
 #include "externs.hpp"
 #include "prior_tests.hpp"
 #include "tools.hpp"
@@ -29,6 +30,18 @@ void nn_sh_prior_test(bool print_out) {
 	Eigen::Map<Eigen::VectorXd> cube_m(cube, e_n_stoc + e_n_weights);
     Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_stoc + e_n_weights);
     e_sh_ip(cube_m, theta_m);
+	if (print_out) {
+		std::cout << "for the hypercube = " << cube_m << std::endl;    
+		std::cout << "theta = " << theta_m << std::endl;
+	}
+}
+
+void nn_sv_sh_prior_test(bool print_out) {
+	double cube[] = {0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.1, 0.9, 0.2, 0.8, 0.3, 0.7};
+	double theta[60];
+	Eigen::Map<Eigen::VectorXd> cube_m(cube, e_n_stoc + e_n_weights);
+    Eigen::Map<Eigen::VectorXd> theta_m(theta, e_n_stoc + e_n_weights);
+    e_svh_ip(cube_m, theta_m);
 	if (print_out) {
 		std::cout << "for the hypercube = " << cube_m << std::endl;    
 		std::cout << "theta = " << theta_m << std::endl;
@@ -298,7 +311,7 @@ void inverse_stoc_hyper_priors_test1() {
 	uint n_dims = 1;
 	Eigen::VectorXd cube_m(2);
     cube_m << 0.1, 0.6;
-    Eigen::VectorXd theta_m(1);
+    Eigen::VectorXd theta_m(2);
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
     prior(cube_m, theta_m);
 }
@@ -316,7 +329,7 @@ void inverse_stoc_hyper_priors_test2() {
 	uint n_dims = 2;
 	Eigen::VectorXd cube_m(3);
     cube_m << 0.1, 0.6, 0.7;
-    Eigen::VectorXd theta_m(2);
+    Eigen::VectorXd theta_m(3);
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
     prior(cube_m, theta_m);
 }
@@ -334,7 +347,7 @@ void inverse_stoc_hyper_priors_test3() {
 	uint n_dims = 2;
 	Eigen::VectorXd cube_m(4);
     cube_m << 0.1, 0.5, 0.6, 0.7;
-    Eigen::VectorXd theta_m(2);
+    Eigen::VectorXd theta_m(4);
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
     prior(cube_m, theta_m);
 }
@@ -352,7 +365,7 @@ void inverse_stoc_hyper_priors_test4() {
 	uint n_dims = 4;
 	Eigen::VectorXd cube_m(7);
     cube_m << 0.1, 0.5, 0.6, 0.7, 0.8, 0.9, 0.4;
-    Eigen::VectorXd theta_m(4);
+    Eigen::VectorXd theta_m(7);
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
     prior(cube_m, theta_m);
 }
@@ -370,7 +383,7 @@ void inverse_stoc_hyper_priors_test5() {
 	uint n_dims = 6;
 	Eigen::VectorXd cube_m(10);
     cube_m << 0.1, 0.5, 0.6, 0.7, 0.8, 0.9, 0.4, 0.2, 0.1, 0.5;
-    Eigen::VectorXd theta_m(6);
+    Eigen::VectorXd theta_m(10);
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
     prior(cube_m, theta_m);
 }
@@ -623,6 +636,81 @@ void inverse_stoc_hyper_priors_test14() {
     Eigen::VectorXd theta_m(n_stoc + n_dims);
     std::cout << "addresses before call" << cube_m.data() << " and " << theta_m.data() << std::endl;
 	sh_inverse_prior prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims);
+    prior(cube_m, theta_m);
+    std::cout << "addresses after call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+}
+
+void inverse_stoc_var_hyper_priors_test1() {
+	std::vector<uint> hyperprior_types = {9};
+	std::vector<uint> var_prior_types = {10};
+	std::vector<uint> prior_types = {4};
+	std::vector<double> hyperprior_params = {1., 2.};
+	std::vector<double> var_prior_params = {1., 2.};
+	std::vector<double> prior_hyperparams = {0.};
+	std::vector<uint> hyper_dependence_lengths = {1};
+	std::vector<uint> var_dependence_lengths = {1};
+	std::vector<uint> dependence_lengths = {1};
+	std::vector<uint> param_hyperprior_types = {0};
+	std::vector<uint> var_param_prior_types = {0};
+	std::vector<uint> param_prior_types = {0};
+	uint n_stoc = 1;
+	uint n_stoc_var = 1;
+	uint n_dims = 1;
+	Eigen::VectorXd cube_m(n_stoc + n_stoc_var + n_dims);
+    cube_m << 0.1, 0.1, 0.6;
+    Eigen::VectorXd theta_m(n_stoc + n_stoc_var + n_dims);
+    std::cout << "addresses before call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+	svh_inverse_prior prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims);
+    prior(cube_m, theta_m);
+    std::cout << "addresses after call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+}
+
+void inverse_stoc_var_hyper_priors_test2() {
+	std::vector<uint> hyperprior_types = {9, 7, 9, 7};
+	std::vector<uint> var_prior_types = {10};
+	std::vector<uint> prior_types = {4, 5, 4};
+	std::vector<double> hyperprior_params = {1., 2., 1., 1., 1., 5., 3., 1.};
+	std::vector<double> var_prior_params = {1., 2.};
+	std::vector<double> prior_hyperparams = {0., 1., 2.};
+	std::vector<uint> hyper_dependence_lengths = {1, 3, 1, 1};
+	std::vector<uint> var_dependence_lengths = {1};
+	std::vector<uint> dependence_lengths = {1, 3, 2};
+	std::vector<uint> param_hyperprior_types = {1, 0, 3, 2};
+	std::vector<uint> var_param_prior_types = {0};
+	std::vector<uint> param_prior_types = {1, 2, 0};
+	uint n_stoc = 4;
+	uint n_stoc_var = 1;
+	uint n_dims = 6;
+	Eigen::VectorXd cube_m(n_stoc + n_stoc_var + n_dims);
+    cube_m << 0.1, 0.5, 0.6, 0.7, 0.5, 0.8, 0.9, 0.4, 0.2, 0.1, 0.5;
+    Eigen::VectorXd theta_m(n_stoc + n_stoc_var + n_dims);
+    std::cout << "addresses before call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+	svh_inverse_prior prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims);
+    prior(cube_m, theta_m);
+    std::cout << "addresses after call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+}
+
+void inverse_stoc_var_hyper_priors_test3() {
+	std::vector<uint> hyperprior_types = {9, 7, 9, 7};
+	std::vector<uint> var_prior_types = {10, 7};
+	std::vector<uint> prior_types = {4, 5, 4};
+	std::vector<double> hyperprior_params = {1., 2., 1., 1., 1., 5., 3., 1.};
+	std::vector<double> var_prior_params = {1., 2., 3., 3.};
+	std::vector<double> prior_hyperparams = {0., 1., 2.};
+	std::vector<uint> hyper_dependence_lengths = {1, 3, 1, 1};
+	std::vector<uint> var_dependence_lengths = {1, 1};
+	std::vector<uint> dependence_lengths = {1, 3, 2};
+	std::vector<uint> param_hyperprior_types = {1, 0, 3, 2};
+	std::vector<uint> var_param_prior_types = {1, 0};
+	std::vector<uint> param_prior_types = {1, 2, 0};
+	uint n_stoc = 4;
+	uint n_stoc_var = 2;
+	uint n_dims = 6;
+	Eigen::VectorXd cube_m(n_stoc + n_stoc_var + n_dims);
+    cube_m << 0.1, 0.5, 0.6, 0.7, 0.9, 0.5, 0.8, 0.9, 0.4, 0.2, 0.1, 0.5;
+    Eigen::VectorXd theta_m(n_stoc + n_stoc_var + n_dims);
+    std::cout << "addresses before call" << cube_m.data() << " and " << theta_m.data() << std::endl;
+	svh_inverse_prior prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, n_dims);
     prior(cube_m, theta_m);
     std::cout << "addresses after call" << cube_m.data() << " and " << theta_m.data() << std::endl;
 }

@@ -7,6 +7,8 @@ import inverse_priors as ip
 
 ######one-dimensional prior distributions
 
+#maybe could have inherited from inverse_priors class, but would have required a lot of modifications, so wouldn't have saved much typing
+
 class inverse_stoc_hyper_prior:
 	def __init__(self, hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, n_dims):
 		"""
@@ -24,16 +26,17 @@ class inverse_stoc_hyper_prior:
 		hyper_dependence_lengths should be same size as param_hyperprior_types. The latter should (similar to what param_prior_types does) index hyperprior_types and hyperprior_params, which should be of the same length as each other.
 		length of hyper_dependence_lengths should equal n_stoc, sum of hyper_dependence_lengths should equal n_dims if same hyper isn't being used for whole nn.
 		way stoch hyperparams are sampled is different to way params are sampled. for a given hyperparam_dependence length one value of the hyperparam is sampled. this is then added to the hyperprior_params hyperparam_dependence length times. similarly, the deterministic hyperparam is 
+		likelihood variances are also stochastic. n.b. their treatment is essentially same as nn parameters.
 		"""
 		assert (len(hyperprior_types) == len(hyperprior_params)), "length of hyperprior_types and hyperprior_params should be same"
 		assert (len(prior_types) == len(prior_hyperparams)), "prior_types and prior_hyperparams should be the same length"
 		assert (len(hyper_dependence_lengths) == len(param_hyperprior_types)), "length of hyper_dependence_lengths should be same as length of param_hyperprior_types"
 		assert (len(dependence_lengths) == len(param_prior_types)), "dependence_lengths and param_prior_types should be the same length"
 		assert (len(hyper_dependence_lengths) == n_stoc), "length of hyper_dependence_lengths should equal n_stoc"
-		if len(dependence_lengths) != 1:
-			assert (np.sum(dependence_lengths) == n_dims), "in case of dependent parameters, sum of dependence_lengths should equal n_dims"
 		if len(hyper_dependence_lengths) != 1:
 			assert (np.sum(hyper_dependence_lengths) == n_dims), "in case of not using single hyperparam, sum of hyper_dependence_lengths should equal n_dims"
+		if len(dependence_lengths) != 1:
+			assert (np.sum(dependence_lengths) == n_dims), "in case of dependent parameters, sum of dependence_lengths should equal n_dims"
 		self.hyperprior_types = hyperprior_types
 		self.prior_types = prior_types
 		self.hyperprior_params = hyperprior_params
@@ -113,25 +116,29 @@ class inverse_stoc_hyper_prior:
 			elif p_type == 9:
 				self.hyperprior_ppfs.append(ip.sqrt_recip_gamma_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 10:
-				self.hyperprior_ppfs.append(ip.sorted_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.recip_gamma_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 11:
-				self.hyperprior_ppfs.append(ip.sorted_pos_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 12:
-				self.hyperprior_ppfs.append(ip.sorted_neg_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_pos_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 13:
-				self.hyperprior_ppfs.append(ip.sorted_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_neg_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 14:
-				self.hyperprior_ppfs.append(ip.sorted_gaussian_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_log_uniform_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 15:
-				self.hyperprior_ppfs.append(ip.sorted_laplace_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_gaussian_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 16:
-				self.hyperprior_ppfs.append(ip.sorted_cauchy_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_laplace_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 17:
-				self.hyperprior_ppfs.append(ip.sorted_delta_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_cauchy_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 18:
-				self.hyperprior_ppfs.append(ip.sorted_gamma_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+				self.hyperprior_ppfs.append(ip.sorted_delta_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 			elif p_type == 19:
+				self.hyperprior_ppfs.append(ip.sorted_gamma_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+			elif p_type == 20:
 				self.hyperprior_ppfs.append(ip.sorted_sqrt_rec_gam_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
+			elif p_type == 21:
+				self.hyperprior_ppfs.append(ip.sorted_rec_gam_prior(hyperprior_hyperparam1, hyperprior_hyperparam2))
 	
 	def get_ppf_objs(self):
 		for p_type in self.prior_types:
@@ -156,25 +163,29 @@ class inverse_stoc_hyper_prior:
 			elif p_type == 9:
 				self.prior_ppfs.append(sqrt_recip_gamma_prior())
 			elif p_type == 10:
-				self.prior_ppfs.append(sorted_uniform_prior())
+				self.prior_ppfs.append(recip_gamma_prior())
 			elif p_type == 11:
-				self.prior_ppfs.append(sorted_pos_log_uniform_prior())
+				self.prior_ppfs.append(sorted_uniform_prior())
 			elif p_type == 12:
-				self.prior_ppfs.append(sorted_neg_log_uniform_prior())
+				self.prior_ppfs.append(sorted_pos_log_uniform_prior())
 			elif p_type == 13:
-				self.prior_ppfs.append(sorted_log_uniform_prior())
+				self.prior_ppfs.append(sorted_neg_log_uniform_prior())
 			elif p_type == 14:
-				self.prior_ppfs.append(sorted_gaussian_prior())
+				self.prior_ppfs.append(sorted_log_uniform_prior())
 			elif p_type == 15:
-				self.prior_ppfs.append(sorted_laplace_prior())
+				self.prior_ppfs.append(sorted_gaussian_prior())
 			elif p_type == 16:
-				self.prior_ppfs.append(sorted_cauchy_prior())
+				self.prior_ppfs.append(sorted_laplace_prior())
 			elif p_type == 17:
-				self.prior_ppfs.append(sorted_delta_prior())
+				self.prior_ppfs.append(sorted_cauchy_prior())
 			elif p_type == 18:
-				self.prior_ppfs.append(sorted_gamma_prior())
+				self.prior_ppfs.append(sorted_delta_prior())
 			elif p_type == 19:
+				self.prior_ppfs.append(sorted_gamma_prior())
+			elif p_type == 20:
 				self.prior_ppfs.append(sorted_sqrt_rec_gam_prior())
+			elif p_type == 21:
+				self.prior_ppfs.append(sorted_rec_gam_prior())
 
 	def __call__(self, hypercube):
 		self.hyperprior_call(hypercube[:self.n_stoc])
@@ -340,6 +351,14 @@ class sqrt_recip_gamma_prior(gamma_prior):
 	def __call__(self, p, a, b):
 		return np.sqrt(1. / gamma_prior.__call__(self, p, a, b))
 
+class recip_gamma_prior(gamma_prior):
+	"""
+	return 1 / sample from gamma distribution, which can be used as 
+	standard deviation for conjugate distribution
+	"""
+	def __call__(self, p, a, b):
+		return 1. / gamma_prior.__call__(self, p, a, b)
+
 #FOLLOWING ARE REPLICAS OF THOSE FOUND IN INVERSE_PRIORS.PY
 #INCLUDED AGAIN BY MISTAKE REALLY (BUT IF REMOVED FUNCTIONS IN THIS FILE RELYING
 #ON THEM WILL NEED TO BE CALLED FROM INVERSE_PRIORS.PY INSTEAD
@@ -437,6 +456,11 @@ class sorted_gamma_prior(gamma_prior):
 		return gamma_prior.__call__(self, t, a, b)
 
 class sorted_sqrt_rec_gam_prior(sqrt_recip_gamma_prior):
+	def __call__(self, p, a, b):
+		t = forced_identifiability_transform(p)
+		return sqrt_recip_gamma_prior.__call__(self, t, a, b)
+
+class sorted_rec_gam_prior(recip_gamma_prior):
 	def __call__(self, p, a, b):
 		t = forced_identifiability_transform(p)
 		return sqrt_recip_gamma_prior.__call__(self, t, a, b)

@@ -12,7 +12,7 @@ class bnn_predictor():
 	steals parts of keras_model (in keras_forward.py) to make predictions (nn output)
 	y from inputs x. uses nn parameter sets from chains .txt file, along with their relative weights
 	"""
-	def __init__(self, k_model, x, y, chains_file):
+	def __init__(self, k_model, x, y, chains_file, n_stoc = 0, n_stoc_var = 0):
 		"""
 		assign model to class, calculate shape of weights, and arrays containing them (latter possibly redundant)
 		"""
@@ -21,8 +21,8 @@ class bnn_predictor():
 		self.x = x
 		self.y = y #for evaluation of performance
 		self.get_weight_info()
-		self.posterior_weights, self.LLs, self.nn_params, self.weight_norm = input_tools.get_chains_data(chains_file)
-		self.nn_param_sets = [self.nn_params[i,:] for i in range(len(self.posterior_weights))]
+		self.posterior_weights, self.LLs, self.stoch_hyperparams, self.stoch_vars, self.nn_params, self.weight_norm = input_tools.get_chains_data(chains_file, n_stoc, n_stoc_var)
+		self.nn_param_sets = [self.nn_params[i] for i in range(len(self.posterior_weights))]
 		self.LL_var = 1. #for calculating LL on test data
 		self.num_outputs = y.shape[1]
 
@@ -168,14 +168,14 @@ class bnn_predictor():
 		"""
 		self.LL_dim = self.num_outputs
 		if loss == 'squared_error':
-			self.model.compile(loss='mse', optimizer='rmsprop') 
+			self.model.compile(loss='mse', optimizer='rmsprop') #'unaverages' mse in call to calc_gauss_ll 
 			#temporary
 			self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
 			self.LL = self.calc_gauss_LL
 			#longer term solution (see comments above)
 			#self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
 		elif loss == 'categorical_crossentropy':
-			self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+			self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop') #'unaverages' loss in call to calc_cross_ent_LL
 			self.LL_const = 0.
 			self.LL = self.calc_cross_ent_LL
 		elif loss == 'av_squared_error':

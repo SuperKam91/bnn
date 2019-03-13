@@ -102,6 +102,13 @@ public:
 	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 };
 
+class recip_gamma_prior: public gamma_prior {
+public:
+	using gamma_prior::gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
 Eigen::VectorXd forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m);
 
 void forced_identifiability_transform(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> t_m);
@@ -189,6 +196,13 @@ public:
 class sorted_sqrt_rec_gam_prior: public sqrt_recip_gamma_prior {
 public:
 	using sqrt_recip_gamma_prior::sqrt_recip_gamma_prior;
+	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
+	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
+};
+
+class sorted_rec_gam_prior: public recip_gamma_prior {
+public:
+	using recip_gamma_prior::recip_gamma_prior;
 	Eigen::VectorXd operator()(Eigen::Ref<Eigen::VectorXd> p_m);
 	void operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m);
 };

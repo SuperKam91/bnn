@@ -10,7 +10,7 @@ import PyPolyChord.output
 def get_param_names(num_inputs, layer_sizes, num_outputs):
 	"""
 	writes list of param_names for weight array which corresponds to (row-wise)
-	weight matrices and bias vector.
+	weight matrices and bias vector w and b respectively.
 	Length of weight_shapes should be even
 	"""
 	weight_shapes = tools.get_weight_shapes(num_inputs, layer_sizes, num_outputs)
@@ -103,7 +103,9 @@ def get_param_names_sh(num_inputs, layer_sizes, num_outputs, weight_shapes, gran
 	"""
 	writes list of param_names for weight array which corresponds to (row-wise)
 	weight matrices and bias vector.
-	Length of weight_shapes should be even
+	as well as prior stochastic parameters.
+	h parameters correspond to the stochastic hyperparameters, which are the standard deviations
+	(scale parameters) of the prior distributions of the neural network parameters. 
 	"""
 	weight_shapes = tools.get_weight_shapes(num_inputs, layer_sizes, num_outputs)
 	param_names = []
@@ -135,6 +137,294 @@ def get_param_names_sh(num_inputs, layer_sizes, num_outputs, weight_shapes, gran
 			i += 1
 	return param_names
 
+def get_param_names_sh2(num_inputs, layer_sizes, num_outputs, trainable_arr, granularity = None):
+	"""
+	NOT TESTED
+	see calc_num_weights2 for relevant of suffix
+	"""
+	weight_shapes = tools.get_weight_shapes2(num_inputs, layer_sizes, num_outputs, trainable_arr)
+	param_names = []
+	i = 0
+	layer_offset = 1
+	if np.all(~np.array(trainable_arr)): #for loop won't make sense if no trainable layers
+		"no trainable parameters"
+		return param_names
+	if granularity == 'single':
+		param_names.append(('p1', 'h_{1}'))
+		i += 1
+	elif granularity == 'layer':
+		for j in range(len(trainable_arr)):
+			if trainable_arr[j]:
+				param_names.append(('p%i' %(i+1), 'h_{%i}' %(j+1)))
+				i += 1
+	elif granularity == 'input_size':
+		for w in range(len(trainable_arr)):
+			if trainable_arr[w]:
+				for n in range(weight_shapes[2 * w][0] + 1): #+1 is for bias hyperparam term
+					param_names.append(('p%i' %(i+1), 'h_{%i, %i}' %(w+1, n+1)))
+					i += 1
+	else: #no stochastic prior hyperparams
+		pass
+	for j in range(len(weight_shapes) / 2):
+		if not trainable_arr[j]:
+			layer_offset += 1
+		weight_row = weight_shapes[2 * j][0]
+		weight_col = weight_shapes[2 * j][1]
+		bias = weight_shapes[2 * j + 1][0]
+		for k in range(weight_row):
+			for l in range(weight_col):
+				param_names.append(('p%i' %(i+1), 'w_{%i,%i,%i}' %(j+layer_offset, k+1, l+1)))
+				i += 1
+		for k in range(bias):
+			param_names.append(('p%i' %(i+1), 'b_{%i,%i}' %(j+layer_offset, k+1)))
+			i += 1
+	return param_names
+
+def get_param_names_sh3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr, granularity = None):
+	"""
+	NOT TESTED
+	see calc_num_weights3 for relevant of suffix
+	"""
+	weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	param_names = []
+	i = 0
+	j = 0
+	weight_offset = 1
+	bias_offset = 1
+	if np.all(~np.array(m_trainable_arr)) and np.all(~np.array(b_trainable_arr)): 
+		print "no trainable parameters"
+		return param_names
+	if granularity == 'single':
+		param_names.append(('p1', 'h_{1}'))
+		i += 1
+	elif granularity == 'layer':
+		for k in range(len(m_trainable_arr)):
+			if m_trainable_arr[k] or b_trainable_arr[k]:
+				param_names.append(('p%i' %(i+1), 'h_{%i}' %(k+1)))
+				i += 1
+	elif granularity == 'input_size':
+		t = 0
+		w = 0
+		for k in range(len(m_trainable_arr)):
+			if m_trainable_arr[k] and b_trainable_arr[k]:
+				t += weight_shapes[w][0]
+				t += 1
+				w += 2
+			elif m_trainable_arr[k] and not b_trainable_arr[k]:
+				t += weight_shapes[w][0]
+				w += 1
+			elif not m_trainable_arr[k] and b_trainable_arr[k]:
+				t += 1
+				w += 1
+			else:
+				pass
+			for n in range(t): 
+				param_names.append(('p%i' %(i+1), 'h_{%i, %i}' %(k+1, n+1)))
+				i += 1
+			t = 0
+	else: #no stochastic prior hyperparams
+		pass
+	for k in range(len(m_trainable_arr)):
+		if m_trainable_arr[k] and b_trainable_arr[k]:
+			weight_row = weight_shapes[j][0]
+			weight_col = weight_shapes[j][1]
+			bias = weight_shapes[j + 1][0]
+			j += 2
+		elif m_trainable_arr[k] and not b_trainable_arr[k]:
+			weight_row = weight_shapes[j][0]
+			weight_col = weight_shapes[j][1]
+			bias = 0
+			j += 1
+		elif not m_trainable_arr[k] and b_trainable_arr[k]:
+			weight_row = 0
+			weight_col = 0
+			bias = weight_shapes[j][0]
+			j += 1
+		else:
+			weight_row = 0
+			weight_col = 0
+			bias = 0
+		for l in range(weight_row):
+			for m in range(weight_col):
+				param_names.append(('p%i' %(i+1), 'w_{%i,%i,%i}' %(k+weight_offset, l+1, m+1)))
+				i += 1
+		for l in range(bias):
+			param_names.append(('p%i' %(i+1), 'b_{%i,%i}' %(k+bias_offset, l+1)))
+			i += 1
+	return param_names
+
+def get_param_names_svh(num_inputs, layer_sizes, num_outputs, weight_shapes, granularity = None, n_stoc_var = 0):
+	"""
+	writes list of param_names for weight array which corresponds to (row-wise)
+	weight matrices and bias vector w and b, 
+	as well as prior stochastic hyperparameters h (which are the 
+	standard deviation / scale parameters of the prior distributions of the neural network parameters) 
+	and likelihood variance stochastic parameters v (which are the variance parameters of the likelihood function).
+	"""
+	weight_shapes = tools.get_weight_shapes(num_inputs, layer_sizes, num_outputs)
+	param_names = []
+	i = 0
+	if granularity == 'single':
+		param_names.append(('p1', 'h_{1}'))
+		i += 1
+	elif granularity == 'layer':
+		for _ in range(len(weight_shapes) / 2):
+			param_names.append(('p%i' %(i + 1), 'h_{%i}' %(i + 1)))
+			i += 1
+	elif granularity == 'input_size':
+		for w in range(len(weight_shapes) / 2):
+			for n in range(weight_shape[2 * w][0] + 1): #+1 is for bias hyperparam term
+				param_names.append(('p%i' %(i + 1), 'h_{%i, %i}' %(w + 1, n + 1)))
+				i += 1
+	else: #no stochastic prior hyperparams
+		pass
+	if n_stoc_var: 
+		for j in range(n_stoc_var):
+			param_names.append(('p%i' %(i + 1), 'v_{%i}' %(j + 1)))
+			i += 1
+	else: #no stochastic lhood variance parameters
+		pass
+	for j in range(len(weight_shapes) / 2):
+		weight_row = weight_shapes[2 * j][0]
+		weight_col = weight_shapes[2 * j][1]
+		bias = weight_shapes[2 * j + 1][0]
+		for k in range(weight_row):
+			for l in range(weight_col):
+				param_names.append(('p%i' %(i + 1), 'w_{%i,%i,%i}' %(j + 1, k + 1, l + 1)))
+				i += 1
+		for k in range(bias):
+			param_names.append(('p%i' %(i+1), 'b_{%i,%i}' %(j + 1, k + 1)))
+			i += 1
+	return param_names
+
+def get_param_names_svh2(num_inputs, layer_sizes, num_outputs, trainable_arr, granularity = None, n_stoc_var = 0):
+	"""
+	NOT TESTED
+	see calc_num_weights2 for relevant of suffix
+	"""
+	weight_shapes = tools.get_weight_shapes2(num_inputs, layer_sizes, num_outputs, trainable_arr)
+	param_names = []
+	i = 0
+	layer_offset = 1
+	if np.all(~np.array(trainable_arr)): #for loop won't make sense if no trainable layers
+		"no trainable parameters"
+		return param_names
+	if granularity == 'single':
+		param_names.append(('p1', 'h_{1}'))
+		i += 1
+	elif granularity == 'layer':
+		for j in range(len(trainable_arr)):
+			if trainable_arr[j]:
+				param_names.append(('p%i' %(i+1), 'h_{%i}' %(j+1)))
+				i += 1
+	elif granularity == 'input_size':
+		for w in range(len(trainable_arr)):
+			if trainable_arr[w]:
+				for n in range(weight_shapes[2 * w][0] + 1): #+1 is for bias hyperparam term
+					param_names.append(('p%i' %(i+1), 'h_{%i, %i}' %(w+1, n+1)))
+					i += 1
+	else: #no stochastic prior hyperparams
+		pass
+	if n_stoc_var: 
+		for j in range(n_stoc_var):
+			param_names.append(('p%i' %(i + 1), 'v_{%i}' %(j + 1)))
+			i += 1
+	else: #no stochastic lhood variance parameters
+		pass
+	for j in range(len(weight_shapes) / 2):
+		if not trainable_arr[j]:
+			layer_offset += 1
+		weight_row = weight_shapes[2 * j][0]
+		weight_col = weight_shapes[2 * j][1]
+		bias = weight_shapes[2 * j + 1][0]
+		for k in range(weight_row):
+			for l in range(weight_col):
+				param_names.append(('p%i' %(i+1), 'w_{%i,%i,%i}' %(j+layer_offset, k+1, l+1)))
+				i += 1
+		for k in range(bias):
+			param_names.append(('p%i' %(i+1), 'b_{%i,%i}' %(j+layer_offset, k+1)))
+			i += 1
+	return param_names
+
+def get_param_names_svh3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr, granularity = None, n_stoc_var = 0):
+	"""
+	NOT TESTED
+	see calc_num_weights3 for relevant of suffix
+	"""
+	weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
+	param_names = []
+	i = 0
+	j = 0
+	weight_offset = 1
+	bias_offset = 1
+	if np.all(~np.array(m_trainable_arr)) and np.all(~np.array(b_trainable_arr)): 
+		print "no trainable parameters"
+		return param_names
+	if granularity == 'single':
+		param_names.append(('p1', 'h_{1}'))
+		i += 1
+	elif granularity == 'layer':
+		for k in range(len(m_trainable_arr)):
+			if m_trainable_arr[k] or b_trainable_arr[k]:
+				param_names.append(('p%i' %(i+1), 'h_{%i}' %(k+1)))
+				i += 1
+	elif granularity == 'input_size':
+		t = 0
+		w = 0
+		for k in range(len(m_trainable_arr)):
+			if m_trainable_arr[k] and b_trainable_arr[k]:
+				t += weight_shapes[w][0]
+				t += 1
+				w += 2
+			elif m_trainable_arr[k] and not b_trainable_arr[k]:
+				t += weight_shapes[w][0]
+				w += 1
+			elif not m_trainable_arr[k] and b_trainable_arr[k]:
+				t += 1
+				w += 1
+			else:
+				pass
+			for n in range(t): 
+				param_names.append(('p%i' %(i+1), 'h_{%i, %i}' %(k+1, n+1)))
+				i += 1
+			t = 0
+	else: #no stochastic prior hyperparams
+		pass
+	if n_stoc_var: 
+		for k in range(n_stoc_var):
+			param_names.append(('p%i' %(i + 1), 'v_{%i}' %(k + 1)))
+			i += 1
+	else: #no stochastic lhood variance parameters
+		pass
+	for k in range(len(m_trainable_arr)):
+		if m_trainable_arr[k] and b_trainable_arr[k]:
+			weight_row = weight_shapes[j][0]
+			weight_col = weight_shapes[j][1]
+			bias = weight_shapes[j + 1][0]
+			j += 2
+		elif m_trainable_arr[k] and not b_trainable_arr[k]:
+			weight_row = weight_shapes[j][0]
+			weight_col = weight_shapes[j][1]
+			bias = 0
+			j += 1
+		elif not m_trainable_arr[k] and b_trainable_arr[k]:
+			weight_row = 0
+			weight_col = 0
+			bias = weight_shapes[j][0]
+			j += 1
+		else:
+			weight_row = 0
+			weight_col = 0
+			bias = 0
+		for l in range(weight_row):
+			for m in range(weight_col):
+				param_names.append(('p%i' %(i+1), 'w_{%i,%i,%i}' %(k+weight_offset, l+1, m+1)))
+				i += 1
+		for l in range(bias):
+			param_names.append(('p%i' %(i+1), 'b_{%i,%i}' %(k+bias_offset, l+1)))
+			i += 1
+	return param_names
+
 def make_param_names(num_inputs, layer_sizes, num_outputs, base_dir, file_root):
 	"""
 	make .paramnames file from scratch, with nn architecture params and file paths.
@@ -160,11 +450,11 @@ def make_param_names3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_t
 	param_f = base_dir + file_root + '.paramnames'
 	make_param_names_file(param_names, param_f)
 
-def make_param_names_sh(num_inputs, layer_sizes, num_outputs, weight_shapes, granularity = None, base_dir, file_root):
+def make_param_names_svh(num_inputs, layer_sizes, num_outputs, weight_shapes, base_dir, file_root, granularity = None, n_stoc_var = 0):
 	"""
 	see calc_num_weights3 for relevant of suffix
 	"""
-	param_names = get_param_names_sh(num_inputs, layer_sizes, num_outputs, weight_shapes, granularity)
+	param_names = get_param_names_sh(num_inputs, layer_sizes, num_outputs, weight_shapes, granularity, n_stoc_var)
 	param_f = base_dir + file_root + '.paramnames'
 	make_param_names_file(param_names, param_f)
 

@@ -199,6 +199,20 @@ void sh_sqrt_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eige
 	theta_m = theta_m.array().inverse().sqrt();
 }
 
+Eigen::VectorXd sh_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, double a, double b) {
+	return (sh_gamma_prior::operator()(p_m, a, b)).array().inverse();
+}
+
+void sh_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, double a, double b) {
+	sh_gamma_prior::operator()(p_m, theta_m, a, b);
+	theta_m = theta_m.array().inverse();
+}
+
+void sh_recip_gamma_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b) {
+	sh_gamma_prior::operator()(p_m, theta_m, a, b);
+	theta_m = theta_m.array().inverse();
+}
+
 //following are exact replicas from inverse_priors.cpp. just included here for completeness, basically.
 //----------------------------------------------------------------------------------------------------------
 
@@ -444,9 +458,22 @@ void sh_sorted_sqrt_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, E
 	sh_sqrt_recip_gamma_prior::operator()(t_m, theta_m, a, b);
 }
 
+Eigen::VectorXd sh_sorted_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, double a, double b) {
+	Eigen::VectorXd t_m = sh_forced_identifiability_transform(p_m);
+	return sh_recip_gamma_prior::operator()(t_m, a, b);
+}
+
+void sh_sorted_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, double a, double b) {
+	Eigen::VectorXd t_m = sh_forced_identifiability_transform(p_m);
+	sh_recip_gamma_prior::operator()(t_m, theta_m, a, b);
+}
+
+void sh_sorted_rec_gam_prior::operator()(Eigen::Ref<Eigen::VectorXd> p_m, Eigen::Ref<Eigen::VectorXd> theta_m, Eigen::Ref<Eigen::VectorXd> a, Eigen::Ref<Eigen::VectorXd> b) {
+	Eigen::VectorXd t_m = sh_forced_identifiability_transform(p_m);
+	sh_recip_gamma_prior::operator()(t_m, theta_m, a, b);
+}
+
 using namespace std::placeholders;
-//n.b. this class is a little different from the python implementation in the sense that the prior hyperparams don't have length n_dims
-//
 sh_inverse_prior::sh_inverse_prior(std::vector<uint> hyperprior_types_, std::vector<uint> prior_types_, std::vector<double> hyperprior_params_, std::vector<double> prior_hyperparams_, std::vector<uint> hyper_dependence_lengths_, std::vector<uint> dependence_lengths_, std::vector<uint> param_hyperprior_types_, std::vector<uint> param_prior_types_, uint n_stoc_, uint n_dims_) :
 	hyperprior_types(hyperprior_types_),
 	prior_types(prior_types_),
@@ -513,34 +540,40 @@ std::vector<base_prior *> sh_inverse_prior::get_hp_ppf_ptr_vec() {
 			ppf_hp_ptr_vec.push_back(new sqrt_recip_gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 10) {
-			ppf_hp_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new recip_gamma_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 11) {
-			ppf_hp_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 12) {
-			ppf_hp_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_pos_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 13) {
-			ppf_hp_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_neg_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 14) {
-			ppf_hp_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_log_uniform_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 15) {
-			ppf_hp_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_gaussian_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 16) {
-			ppf_hp_ptr_vec.push_back(new sorted_cauchy_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_laplace_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 17) {
-			ppf_hp_ptr_vec.push_back(new sorted_delta_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_cauchy_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 18) {
-			ppf_hp_ptr_vec.push_back(new sorted_gamma_prior(hyperparam1, hyperparam2));
+			ppf_hp_ptr_vec.push_back(new sorted_delta_prior(hyperparam1, hyperparam2));
 		}
 		else if (hyperprior_types.at(i) == 19) {
+			ppf_hp_ptr_vec.push_back(new sorted_gamma_prior(hyperparam1, hyperparam2));
+		}
+		else if (hyperprior_types.at(i) == 20) {
 			ppf_hp_ptr_vec.push_back(new sorted_sqrt_rec_gam_prior(hyperparam1, hyperparam2));
+		}
+		else if (hyperprior_types.at(i) == 21) {
+			ppf_hp_ptr_vec.push_back(new sorted_rec_gam_prior(hyperparam1, hyperparam2));
 		}
 	}
 	return ppf_hp_ptr_vec;
@@ -581,34 +614,40 @@ std::vector<sh_base_prior *> sh_inverse_prior::get_ppf_ptr_vec() {
 			ppf_ptr_vec.push_back(new sh_sqrt_recip_gamma_prior());
 		}
 		else if (prior_types.at(i) == 10) {
-			ppf_ptr_vec.push_back(new sh_sorted_uniform_prior());
+			ppf_ptr_vec.push_back(new sh_recip_gamma_prior());
 		}
 		else if (prior_types.at(i) == 11) {
-			ppf_ptr_vec.push_back(new sh_sorted_pos_log_uniform_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_uniform_prior());
 		}
 		else if (prior_types.at(i) == 12) {
-			ppf_ptr_vec.push_back(new sh_sorted_neg_log_uniform_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_pos_log_uniform_prior());
 		}
 		else if (prior_types.at(i) == 13) {
-			ppf_ptr_vec.push_back(new sh_sorted_log_uniform_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_neg_log_uniform_prior());
 		}
 		else if (prior_types.at(i) == 14) {
-			ppf_ptr_vec.push_back(new sh_sorted_gaussian_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_log_uniform_prior());
 		}
 		else if (prior_types.at(i) == 15) {
-			ppf_ptr_vec.push_back(new sh_sorted_laplace_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_gaussian_prior());
 		}
 		else if (prior_types.at(i) == 16) {
-			ppf_ptr_vec.push_back(new sh_sorted_cauchy_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_laplace_prior());
 		}
 		else if (prior_types.at(i) == 17) {
-			ppf_ptr_vec.push_back(new sh_sorted_delta_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_cauchy_prior());
 		}
 		else if (prior_types.at(i) == 18) {
-			ppf_ptr_vec.push_back(new sh_sorted_gamma_prior());
+			ppf_ptr_vec.push_back(new sh_sorted_delta_prior());
 		}
 		else if (prior_types.at(i) == 19) {
+			ppf_ptr_vec.push_back(new sh_sorted_gamma_prior());
+		}
+		else if (prior_types.at(i) == 20) {
 			ppf_ptr_vec.push_back(new sh_sorted_sqrt_rec_gam_prior());
+		}
+		else if (prior_types.at(i) == 21) {
+			ppf_ptr_vec.push_back(new sh_sorted_rec_gam_prior());
 		}
 	}
 	return ppf_ptr_vec;
@@ -696,10 +735,10 @@ void sh_inverse_prior::operator()(Eigen::Ref<Eigen::VectorXd> cube_m, Eigen::Ref
 	else {
 		hyperprior_call_ptr = std::bind(&sh_inverse_prior::hyperprior_call_by_hyper_dependence_lengths, this, _1, _2);
 	}
-	std::function<void(Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>)> prior_call_ptr;
 	hyperprior_call_ptr(cube_m.segment(0, n_stoc), theta_m.segment(0, n_stoc));
 	// std::cout << "stoc hyperparams" << std::endl;
 	// std::cout << stoc_hyperparams_m << std::endl;
+	std::function<void(Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>)> prior_call_ptr;
 	if (dependence_lengths.size() == 1) {
 		prior_call_ptr = std::bind(&sh_inverse_prior::prior_call_ind_same, this, _1, _2);
 	}

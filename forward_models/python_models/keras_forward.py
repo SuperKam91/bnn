@@ -1,6 +1,7 @@
 #for some reason if you import scipy.stats before tf, get ImportError on scipy.stats import
 import inverse_priors
 import inverse_stoc_hyper_priors as isp
+import inverse_stoc_var_hyper_priors as isvp
 
 #########commercial modules
 import numpy as np
@@ -34,7 +35,7 @@ class keras_model():
     but this would only give values for one livepoint, so should use pc initialisation to initialise weights.
     num_weights also probably not necessary.
     """
-    def __init__(self, k_model, x_tr, y_tr, batch_size):
+    def __init__(self, k_model, x_tr, y_tr, batch_size, n_stoc_var = 0):
         """
         assign model to class, calculate shape of weights, and arrays containing them (latter possibly redundant)
         """
@@ -54,6 +55,31 @@ class keras_model():
         self.num_batches = int(np.ceil(float(self.m)/self.batch_size))
         self.get_weight_info()
         self.LL_var = 1. #take this as an argument in the future probably, either in init or ll_setup
+        self.n_stoc_var = n_stoc_var #currently only works for 0 or 1.
+
+    def squared_error_LL_c(self):
+    	"""
+		ll const for gauss lhood
+    	"""
+    	return -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+
+    def categorical_crossentropy_LL_c(self):
+    	"""
+		ll const for multinomial lhood
+    	"""
+    	return 0.
+
+    def av_squared_error_LL_c(self):
+    	"""
+		ll const for av gauss lhood
+    	"""
+    	return -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+
+    def av_categorical_crossentropy_LL_c(self):
+    	"""
+		ll const for av multinomial lhood
+    	"""
+    	return 0.
 
     def setup_LL(self, loss):
         """
@@ -73,27 +99,29 @@ class keras_model():
             self.batch_generator = self.create_batch_generator()
         self.LL_dim = self.batch_size * self.num_outputs
         if loss == 'squared_error':
-            self.model.compile(loss='mse', optimizer='rmsprop') #optimiser is irrelevant for this class
+            self.model.compile(loss='mse', optimizer='rmsprop') #optimiser is irrelevant for this class.'unaverages' mse in call to calc_gauss_ll
             #temporary
-            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var))
+            self.LL_const_f = self.squared_error_LL_c
             self.LL = self.calc_gauss_LL
             #longer term solution (see comments above)
             #self.LL_const = -0.5 * (LL_dim * np.log(2. * np.pi) + np.log(np.linalg.det(variance)))
         elif loss == 'categorical_crossentropy':
-            self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
-            self.LL_const = 0.
+            self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop') #'unaverages' loss in call to calc_cross_ent_LL
+            self.LL_const_f = self.categorical_crossentropy_LL_c
             self.LL = self.calc_cross_ent_LL
         elif loss == 'av_squared_error':
             self.model.compile(loss='mse', optimizer='rmsprop') 
             #temporary
-            self.LL_const = -0.5 * self.LL_dim * (np.log(2. * np.pi) + np.log(self.LL_var) + np.log(self.LL_dim))
+            self.LL_const_f = self.av_squared_error_LL_c
             self.LL = self.calc_av_gauss_LL
         elif loss == 'av_categorical_crossentropy':
             self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
-            self.LL_const = 0.
+            self.LL_const_f = self.av_categorical_crossentropy_LL_c
             self.LL = self.calc_av_cross_ent_LL
         else:
             raise NotImplementedError
+        self.LL_const = self.LL_const_f() 
+        self.stoc_var_setup()
 
 #for LL calculations, may want to consider taking average as this is what MLE/MPE estimates do, meaning they essentially sample
 #from a different likelihood (MPE samples from LL with a variance which is a factor of batch_size larger).
@@ -149,6 +177,31 @@ class keras_model():
         """
         self.LL_const = -1 * np.log((self.model.predict(x)**(1. / self.batch_size)).prod(axis = 0).sum())
         return - 1. * self.model.evaluate(x, y, batch_size = self.batch_size, verbose = 0) + self.LL_const
+
+    def stoc_var_setup(self):
+    	"""
+		stochastic vars only currently supports 0 or 1 stochastic variances
+    	"""
+    	if self.n_stoc_var == 0:
+    		self.stoc_var_update = self.no_stoc_var_update
+    	elif self.n_stoc_var == 1:
+    		self.stoc_var_update = self.one_stoc_var_update
+    	else:
+    		print "only 0 or 1 stoc variances currently supported"
+    		raise NotImplementedError
+
+    def no_stoc_var_update(self, LL_vars):
+    	"""
+		if no stochastic variances, no updating needs to be done here
+    	"""
+    	return None
+
+    def one_stoc_var_update(self, LL_vars):
+    	"""
+		update variance, recalculate llhood normalisation constant
+    	"""
+    	self.LL_var = LL_vars[0]
+    	self.LL_const = self.LL_const_f()
         
     def get_weight_info(self):
         """
@@ -243,18 +296,16 @@ class keras_model():
         evaluates log likelihood function and returns its value.
         to be passed to polychord as loglikelihood function
         """
-        self.set_k_weights(oned_weights)
+        self.set_k_weights(oned_weights[self.n_stoc_var:])
         x_batch, y_batch = self.get_batch()
-        #if non-constant variance ever necessary,
-        #self.LL_var and LL_const will have to be updated here, 
-        #same goes for tf and np forward classes 
+        self.stoc_var_update(oned_weights[:self.n_stoc_var])
         LL = self.LL(x_batch, y_batch)
         return LL
 
     def test_output(self, oned_weights):
         print "one-d weights:"
         print oned_weights
-        self.set_k_weights(oned_weights)
+        self.set_k_weights(oned_weights[self.n_stoc_var:])
         x_batch, y_batch = self.get_batch()
         print "input batch:"
         print x_batch
@@ -262,6 +313,9 @@ class keras_model():
         print y_batch
         print "nn output:"
         print self.model.predict(x_batch)
+        self.stoc_var_update(oned_weights[:self.n_stoc_var])
+        print "LL var and const"
+        print self.LL_var, self.LL_const
         print "log likelihood:"
         print self.LL(x_batch, y_batch) 
         
@@ -353,37 +407,34 @@ def main(run_string):
     data_dir = '../../data/uci/'
     data_prefix = data_dir + data
     x_tr, y_tr = input_tools.get_x_y_tr_data(data_prefix, data_suffix)
+    x_tr = np.genfromtxt('../../data/linear_input_data.txt', delimiter = ',')
+    y_tr = x_tr
+    batch_size = x_tr.shape[0]
     batch_size = x_tr.shape[0]
     ###### get weight information
-    weights_dir = '../../data/'
+    weights_dir = '../../data/' #for forward test
     a1_size = 0
-    layer_sizes = [] #if using slp, leave this list empty
-    m_trainable_arr = [True]
-    b_trainable_arr = [True]
     num_inputs = tools.get_num_inputs(x_tr)
     num_outputs = tools.get_num_outputs(y_tr)
+    layer_sizes = [1, num_inputs] * 2 #if using slp, leave this list empty
+    m_trainable_arr = [True, True] * 2 + [False]
+    b_trainable_arr = [True, True] * 2 + [False]	
     num_weights = tools.calc_num_weights3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
     ###### check shapes of training data
     x_tr, y_tr = tools.reshape_x_y_twod(x_tr, y_tr)
-    ###### setup keras model
-    model = kms.slp(num_inputs, num_outputs, layer_sizes)
-    km = keras_model(model, x_tr, y_tr, batch_size)
-    loss = 'squared_error' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
-    km.setup_LL(loss)
-    ###### test llhood output
-    if "forward_test_linear" in run_string:
-    	forward_tests.forward_test_linear([km], num_weights, weights_dir)
     ###### setup prior
-    hyper_type = "stochastic" # "stochastic" or "deterministic"
+    hyper_type = "deterministic" # "stochastic" or "deterministic"
+    var_type = "deterministic" # "stochastic" or "deterministic"
     weight_shapes = tools.get_weight_shapes3(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr)
     dependence_lengths = tools.get_degen_dependence_lengths(weight_shapes, independent = True)
-    if hyper_type == "deterministic":
+    if hyper_type == "deterministic" and var_type == "deterministic":
         prior_types = [4]
         prior_hyperparams = [[0., 1.]]
         param_prior_types = [0]
         prior = inverse_priors.inverse_prior(prior_types, prior_hyperparams, dependence_lengths, param_prior_types, num_weights)
         n_stoc = 0
-    elif hyper_type == "stochastic":
+        n_stoc_var = 0
+    elif hyper_type == "stochastic" and var_type == "deterministic":
         granularity = 'single'
         hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
         hyperprior_types = [9]
@@ -394,23 +445,48 @@ def main(run_string):
         param_prior_types = [0]
         n_stoc = len(hyper_dependence_lengths)
         prior = isp.inverse_stoc_hyper_prior(hyperprior_types, prior_types, hyperprior_params, prior_hyperparams, hyper_dependence_lengths, dependence_lengths, param_hyperprior_types, param_prior_types, n_stoc, num_weights)
-    ###### test prior output from nn setup
+        n_stoc_var = 0
+    elif hyper_type == "stochastic" and var_type == "stochastic":
+        granularity = 'single'
+        hyper_dependence_lengths = tools.get_hyper_dependence_lengths(weight_shapes, granularity)
+        var_dependence_lengths = [1]
+        n_stoc_var = len(var_dependence_lengths)
+        hyperprior_types = [9]
+        var_prior_types = [10]
+        prior_types = [4]
+        hyperprior_params = [[1. / 2., 1. / (2. * 100)]]
+        var_prior_params = [[1. / 2., 1. / (2. * 100)]]
+        prior_hyperparams = [0.]
+        param_hyperprior_types = [0]
+        var_param_prior_types = [0]
+        param_prior_types = [0]
+        n_stoc = len(hyper_dependence_lengths)
+        prior = isvp.inverse_stoc_var_hyper_prior(hyperprior_types, var_prior_types, prior_types, hyperprior_params, var_prior_params, prior_hyperparams, hyper_dependence_lengths, var_dependence_lengths, dependence_lengths, param_hyperprior_types, var_param_prior_types, param_prior_types, n_stoc, n_stoc_var, num_weights)
+###### test prior output from nn setup
     if "nn_prior_test" in run_string:
-    	prior_tests.nn_prior_test(prior, n_stoc + num_weights)
+        prior_tests.nn_prior_test(prior, n_stoc + n_stoc_var + num_weights)
+    ###### setup keras model
+    model = kms.mlp_ResNet_2(num_inputs, num_outputs, layer_sizes)
+    km = keras_model(model, x_tr, y_tr, batch_size, n_stoc_var)
+    loss = 'squared_error' # 'squared_error', 'av_squared_error', 'categorical_crossentropy', 'av_categorical_crossentropy'
+    km.setup_LL(loss)
+    ###### test llhood output
+    if "forward_test_linear" in run_string:
+        forward_tests.forward_test_linear([km], n_stoc_var + num_weights, weights_dir)
     ###### setup polychord
     nDerived = 0
-    settings = PyPolyChord.settings.PolyChordSettings(n_stoc + num_weights, nDerived)
+    settings = PyPolyChord.settings.PolyChordSettings(n_stoc + n_stoc_var + num_weights, nDerived)
     settings.base_dir = './keras_chains/'
-    settings.file_root = data + "_sh_slp_1"
+    settings.file_root = data + "_sh_sv_slp_1"
     settings.nlive = 1000
     ###### run polychord
     if "polychord1" in run_string:
-    	PyPolyChord.run_polychord(km, n_stoc, num_weights, nDerived, settings, prior, polychord_tools.dumper)
+        PyPolyChord.run_polychord(km, n_stoc, n_stoc_var, num_weights, nDerived, settings, prior, polychord_tools.dumper)
     if "writeparamnames" in run_string:
         output_tools.write_paramnames(num_inputs, layer_sizes, num_outputs, m_trainable_arr, b_trainable_arr, 'bh_50_slp_1', False, False, True, False)
 
 if __name__ == '__main__':
-	run_string = 'polychord1'
+	run_string = 'forward_test_linear'
 	main(run_string)
 
 
