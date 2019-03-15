@@ -161,6 +161,10 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- Look at number of constrained dimensions by calculating from likelihood values in chains (c.f. Will's new paper).
+
+- Calculate likelihood value associated with traditional training (Keras) weights. Will be interesting to see how these compare with likelihood values of nested sampling
+
 - L0 norm is a much desired regularisation type in traditional methods, but is difficult to compute. Wonder what prior this corresponds to.
 
 - As these models become increasingly complex as we let the data decide more hyperparameters (prior variance, likelihood variance, number of layers, number of neurons per layer, type of activation functions, network parameters), may be worth training some of these (i.e. the differentiable ones) using traditional (optimisation) methods. One can still get a measure of uncertainty and an estimate of the evidence on this subspace by looking at the Hessian.
