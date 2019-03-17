@@ -47,11 +47,11 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //-----------------------------------------------------------------------------
 //first determine whether to use stochastic or deterministic hyperparameters
 //-----------------------------------------------------------------------------
-#define g_PRIOR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
+#define g_PRIOR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
 //-----------------------------------------------------------------------------
 //number of stochastic likelihood variances only currently supports 0 or 1
 //----------------------------------------------------------------------------
-#define g_VAR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
+#define g_VAR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
 //----------------------------------------------------------------------------
 #if ((g_PRIOR_TYPE == 'D') && (g_VAR_TYPE == 'D'))
 	const std::string e_hyper_type = "deterministic"; //"deterministic" or "stochastic"
@@ -163,7 +163,7 @@ const std::string g_x_path = e_data_dir + e_data + "_x_tr_10.csv";
 const std::string g_y_path = e_data_dir + e_data + "_y_tr_10.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_sh_sv_slp_10"; //for chains
+const std::string e_data_suffix = "_sh_sv_slp_11"; //for chains
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
 //this initialisation has to be done at global scope in some file, unless polychord wrapper is modified to take forward_prop object.
@@ -176,8 +176,8 @@ int main() {
 	bool nn_prior_t = false;
 	bool prior_pft = false;
 	bool prior_spft = false;
-	bool forward_t_linear = true;
-	bool polychord1_run = false;
+	bool forward_t_linear = false;
+	bool polychord1_run = true;
 	bool profiling = false; //also dictates whether to print output or not
 	//setup ll, can't do this outside of function
 	e_nn.setup_LL("gauss"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
