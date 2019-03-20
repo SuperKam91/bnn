@@ -161,6 +161,12 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- Papers and posts on width vs length of neural networks: https://stats.stackexchange.com/questions/222883/why-are-neural-networks-becoming-deeper-but-not-wider;
+https://www.quora.com/Why-are-neural-networks-becoming-deeper-more-layers-but-not-wider-more-nodes-per-layer;
+https://stats.stackexchange.com/questions/214360/what-are-the-effects-of-depth-and-width-in-deep-neural-networks;
+https://stats.stackexchange.com/questions/182734/what-is-the-difference-between-a-neural-network-and-a-deep-neural-network-and-w;
+basic idea is that wider networks develop more lower level features/ ones 'similar' to inputs, while deeper networks calculate more complex features more abstract from the inputs. Arguments for depth are that more complex functions of the input can be learned and thus the same 'predictive power' may be obtained with fewer nodes, and more abstract features may generalise to out-of-sample data better. Arguments for width are that it is more computationally efficient as more calculations can be done in parallel, less problems with numerical instabilities such as vanishing and exploding gradients.
+
 - Look at number of constrained dimensions by calculating from likelihood values in chains (c.f. Will's new paper).
 
 - Calculate likelihood value associated with traditional training (Keras) weights. Will be interesting to see how these compare with likelihood values of nested sampling
