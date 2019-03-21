@@ -59,6 +59,10 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - To me it seems like machine learning is a relatively small part of this work. Much more time and effort is focused on the understanding of the underlying physics, and constructiing this pipeline of analyses than the actual training of regression/classification functions.
 
+## further thoughts
+
+- They calculate error on each time series for given parameter set (~1700 of these for testing data), and plot histogram of errors associated with each of these sets.
+
 # other stuff
 
 - Compare performance of different architectures, different granularity of stochastic hyperparameters on Boston housing dataset in terms of Evidence and test set errors.
