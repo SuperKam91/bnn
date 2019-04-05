@@ -165,6 +165,16 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- Turns out you can also use keras models with sklearn's gridsearch (and presumably randomised search), see: https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/. This allows one to be more granular with hyperparameters, such as number of nodes per layer, number of layers, different activations for each layer, dropout regularisation, etc.
+
+- Randomised search can be thought of probabilistically as the same as gridsearch, but with non-uniform priors in general.
+
+- In sklearn you can also use a randomised search over network hyperparameters. Where instead of exhausting the hyperparameter grid, you sample from it according to probability distribution(s) governing each dimension of the grid.
+
+- Note grid search is sort of equivalent to assigning uniform priors to the hyperparameters, and then maximising the conditional posterior of the model parameters (conditional on the hyperparameters) on the training data. The maximisation of the conditional hyperparameters posterior (conditioned on the model parameters, which are different for each hyperparam set) is then obtained by  maximising over the cross validation data (or the best average in the case of k-fold). Not sure it's possible to formulate this mathematically, but I guess it can be interpreted as an approximation to the full posterior.
+
+- In sklearn you can perform a gridsearch over network hyperparameters of the sklearn nn models (reg constant of prior, number of layers and sizes, optimiser, optimisation hyperparameters, etc.). For regression problems this uses k-fold cross validation (for each run, partition training data into k equally sized sets, train network on k-1 of these, and use remaining set as cross validation set. Repeat this k times with the cross vaidation set being one of the different k sets each time, then average over the k evaluation metric scores to get the final metric value. The 'best' set of hyperparameters can then be used to train a model on the whole (all k-folds) of the training data, giving a final model). For classification it uses stratified k-fold (same as vanilla version but has roughly same proportion of each class in each fold).  
+
 - Posts on width vs length of neural networks: 
 https://stats.stackexchange.com/questions/222883/why-are-neural-networks-becoming-deeper-but-not-wider;
 https://www.quora.com/Why-are-neural-networks-becoming-deeper-more-layers-but-not-wider-more-nodes-per-layer;
