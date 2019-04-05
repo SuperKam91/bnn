@@ -165,7 +165,10 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
-- Turns out you can also use keras models with sklearn's gridsearch (and presumably randomised search), see: https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/. This allows one to be more granular with hyperparameters, such as number of nodes per layer, number of layers, different activations for each layer, dropout regularisation, etc.
+- In general tf models can't be used with sklearn's grid/random search methods, but apparently it can be used with: https://ray.readthedocs.io/en/latest/tune.html. tf required to reach most granularity in hyperparameter tuning e.g. different regularisation constants for each input to layer (c.f. input_size granularity in bnns).
+
+- Turns out you can also use keras models with sklearn's gridsearch (and presumably randomised search), see: https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/. This allows one to be more granular with hyperparameters, such as regularisation constant for each layer, number of nodes per layer, number of layers, different activations for each layer, dropout regularisation, etc. Requires the use of keras->sklearn wrappers, see: https://keras.io/scikit-learn-api/.
+Note to change ll variance, need to use a hack: define a higher order loss function which takes variance as argument, and returns loss function with that variance which can then be passed to model.compile. On each iteration, new higher order function will need to be called with the new variance value, and corresponding loss function passed to model.compile.
 
 - Randomised search can be thought of probabilistically as the same as gridsearch, but with non-uniform priors in general.
 
