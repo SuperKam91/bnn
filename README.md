@@ -63,13 +63,19 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - They calculate error on each time series for given parameter set (~1700 of these for testing data), and plot histogram of errors associated with each of these sets.
 
+# main work
+
+- Run mlp bnns first with no stochastics, then with different granularities of prior, then including stochastic var. Then include more nodes in hidden layer and repeat. Then increase number of layers and repeat. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity.
+- If get time, implement stochastic number of layers, number of nodes, maybe even types of activations. Note for former two, this generally requires a reversible-jump MCMC method as the size of the parameter space changes as the nn size changes. But Hee's paper claims it can be done with nested sampling, though I'm not sure how accurate the evidence values will be.
+- Will be good to see how test performance varies as a function of these things. May be good to also compare with traditional equivalents, where they use randomised search/Bayes optimisation to select model hyperparams. However, getting same granularity on hyperparameters will be very difficult in some cases (e.g. input_size granularity on stochastic prior hyperparams). 
+- Also want to take advantage of polychord’s no derivatives requirement. May be the case that nns which are usually associated with numerical difficulties (e.g. very deep nns or ones with more complex activations) actually perform very well when trained with PolyChord, as these issues are no longer relevant.
+- Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function. 
+- On that note, could look at traditional performance using hierarchical Bayes on stochastic var and prior hyperparams as I don’t think this has ever been done before. However, don’t think I will do this
+
 # other stuff
 
-- Compare performance of different architectures, different granularity of stochastic hyperparameters on Boston housing dataset in terms of Evidence and test set errors.
 - Think of L0 regularisation in terms of a prior.
-- Look at treating likelihood variance as stochastic.
 - See how 'infinitely' long ResNets perform c.f. universal approximation using ResNets paper.
-- Start thinking about how to adapt pipeline so that number of layers, number of neurons and type of activation functions can be treated as stochastic hyperparameters.
 - Maybe also think about how at least some parts of the training can be done traditionally (via optimisation) and as a bonus, how one can obtain uncertainty and evidence estimates from this subspace by using the Hessian.
 - Look at typical dimensionality of sequential/recurrent nns.
 - Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord.
