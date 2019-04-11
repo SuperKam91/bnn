@@ -22,5 +22,5 @@
 
 - If doing a gridsearch, distributed systems are great as each NN can be trained independently (i.e. each node trains a NN on entire data).
 
-FOR DB FILE: MapReduce refers to appying a map to some data to turn it into another format, then performing some reduction operation on the mapped data to come to a final result.
+FOR DB FILE: - MapReduce refers to appying a map to some data to turn it into another format, then performing some reduction operation on the mapped data to come to a final result. e.g. for files containing temperatures in cities, mapping function could be to return hottest temp for each city found in each file, then reduce function would find maximum over these outputs for each city to find global maximums (over all files) for each city.
 
