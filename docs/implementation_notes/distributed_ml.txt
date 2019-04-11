@@ -22,3 +22,5 @@
 
 - If doing a gridsearch, distributed systems are great as each NN can be trained independently (i.e. each node trains a NN on entire data).
 
+FOR DB FILE: MapReduce refers to appying a map to some data to turn it into another format, then performing some reduction operation on the mapped data to come to a final result.
+
