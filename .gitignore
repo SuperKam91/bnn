@@ -32,3 +32,5 @@ forward_models/cpp_models/cpp_plots/
 MPE_examples/autoencoders/MNIST_data/
 ### ignore 21cm data
 data/21_cm/*.txt
+### ignore cpp lib files
+forward_models/cpp_models/lib/
