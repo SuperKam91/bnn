@@ -7,10 +7,10 @@ using namespace std;
 int main()
 {
 MatrixXd A;
-A.setRandom(10000, 10000);
+A.setRandom(100, 100);
 
 MatrixXd B;
-B.setRandom(10000, 10000);
+B.setRandom(100, 100);
 
 MatrixXd C;
 C=A*B;
