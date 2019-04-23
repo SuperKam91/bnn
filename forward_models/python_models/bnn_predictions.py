@@ -1,16 +1,19 @@
 #########commercial modules
 import numpy as np
 import tensorflow as tf
+import scipy.interpolate
 
 #in-house modules
 import keras_models as kms
 import input_tools
 import output_tools
+import Z_stats
 
 class bnn_predictor():
 	"""
 	steals parts of keras_model (in keras_forward.py) to make predictions (nn output)
-	y from inputs x. uses nn parameter sets from chains .txt file, along with their relative weights
+	y from inputs x. uses nn parameter sets from chains .txt file, along with their relative weights.
+	assumes x and y in same form as used when training network (i.e. whether they are scaled the same).
 	"""
 	def __init__(self, k_model, x, y, chains_file, n_stoc = 0, n_stoc_var = 0):
 		"""
@@ -22,9 +25,60 @@ class bnn_predictor():
 		self.y = y #for evaluation of performance
 		self.get_weight_info()
 		self.posterior_weights, self.LLs, self.stoch_hyperparams, self.stoch_vars, self.nn_params, self.weight_norm = input_tools.get_chains_data(chains_file, n_stoc, n_stoc_var)
+		stats_file = chains_file[:-4] + '.stats'
+		self.logZ, self.logZ_err = input_tools.get_ev(stats_file)
+		self.Z = Z_stats.calcEofZII(self.LogZ, self.logZ_err**2., 'linear') 
+		self.Z_err = np.sqrt(Z_stats.calcVarZII(self.logZ_err**2., self.logZ, self.Z, 'linear'))
 		self.nn_param_sets = [self.nn_params[i] for i in range(len(self.posterior_weights))]
 		self.LL_var = 1. #for calculating LL on test data
 		self.num_outputs = y.shape[1]
+
+	def calc_kl_divergence(self):
+		"""
+		calculate kl-divergence as defined in terms of
+		posterior weights (and thus evidence) and LLs in:
+		https://ned.ipac.caltech.edu/level5/Sept13/Trotta/Trotta4.html 
+		"""
+		return -1. * np.sum(self.Z) + np.sum(self.posterior_weights * self.LLs)
+
+	def calc_bayes_model_dim(self):
+		"""
+		calc bayesian model dimensionality d as described in
+		https://arxiv.org/pdf/1903.06682.pdf.
+		apparently gives measure of number of dimensions of problems that are well
+		constrained by posterior (w.r.t prior), by looking at variance of Shannon information entropy
+		"""
+		return 2. * (np.sum(self.posterior_weights * (self.LLs ** 2.)) - np.sum((self.posterior_weights * self.LLs) ** 2.))
+
+	def calc_bayes_model_comp(self, point_estimator_type = 'mean'):
+		"""
+		calc bayesian model complexity d_hat as described in
+		https://arxiv.org/pdf/1903.06682.pdf
+		requires choice of point estimator theta_hat, which can be either
+		the mean estimate, the posterior mode or the ll mode.
+		note nn param mean estimate marginalises over nn params only, not stochastic hyperparams/ ll vars
+		"""
+		if point_estimator_type == 'nn param mean':
+			point_estimator = (self.nn_params.T * self.posterior_weights).T.sum(axis = 0)
+			LL_hat = scipy.interpolate.griddata(self.nn_params, self.LLs, point_estimator, method = 'linear')
+		elif point_estimator_type == 'full mean':
+			point_estimator = (np.hstack([self.stoch_hyperparams, self.stoch_vars, self.nn_params]).T * self.posterior_weights).T.sum(axis = 0)
+			if len(self.stoch_hyperparams.shape) == 1:
+				temp1 = self.stoch_hyperparams.reshape(-1, 1)
+			else:
+				temp1 = self.stoch_hyperparams
+			if len(self.stoch_vars.shape) == 1:
+				temp2 = self.stoch_vars.reshape(-1, 1)
+			else:
+				temp2 = self.stoch_vars
+			LL_hat = scipy.interpolate.griddata(np.hstack([temp1, temp2, self.nn_params]), self.LLs, point_estimator, method = 'linear')
+		elif point_estimator_type == 'posterior mode':
+			argmax = np.argmax(self.posterior_weights)
+			LL_hat = self.LLs[argmax]
+		elif point_estimator_type == 'll mode':
+			argmax = np.argmax(self.LLs)
+			LL_hat = self.LLs[argmax]	
+		return 2. * LL_hat - np.sum(self.posterior_weights * self.LLs)	
 
 	def sample_prediction(self):
 		"""
@@ -74,6 +128,21 @@ class bnn_predictor():
 		MLE_nn_param_set = self.nn_param_sets[argmax]
 		self.set_k_weights(MLE_nn_param_set)
 		return self.model.predict(self.x)		
+
+	def bnn_trad_comp(self, bnn_type):
+		if type(bnn_type) == int:
+			bnn_nn_param_set = self.nn_param_sets[bnn_type]
+		elif type(bnn_type) == 'mpe' or type(bnn_type) == 'MPE':
+			argmax = np.argmax(self.posterior_weights)
+			bnn_nn_param_set = self.nn_param_sets[argmax]
+		elif type(bnn_type) == 'mle' or type(bnn_type) == 'MLE':
+			argmax = np.argmax(self.LLs)
+			bnn_nn_param_set = self.nn_param_sets[argmax]
+		elif type(bnn_type) == 'expected weights':
+			bnn_nn_param_set = (self.nn_params.T * self.posterior_weights).T.sum(axis = 0)
+			
+		self.set_k_weights(bnn_nn_param_set)
+
 
 	def y_pred_chains(self, file = None, test_index = 0):
 		"""
