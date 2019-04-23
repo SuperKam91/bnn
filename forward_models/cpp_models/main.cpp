@@ -32,13 +32,13 @@ const uint g_b_size = 253;
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
-const std::vector<uint> g_l_sizes = {};
-const std::vector<bool> g_trainable_w_v = {true};
-const std::vector<bool> g_trainable_b_v = {true};
+const std::vector<uint> g_l_sizes = {8};
+const std::vector<bool> g_trainable_w_v = {true, true};
+const std::vector<bool> g_trainable_b_v = {true, true};
 //external as it is needed by forward_test and polychord_interface
 const uint e_n_weights = calc_num_weights(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
 std::vector<uint> g_weight_shapes = get_weight_shapes(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
-#define g_NEURAL_NETWORK slp 
+#define g_NEURAL_NETWORK mlp 
 //prior setup
 //-----------------------------------------------------------------------------
 bool g_independent = true;
@@ -47,11 +47,11 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //-----------------------------------------------------------------------------
 //first determine whether to use stochastic or deterministic hyperparameters
 //-----------------------------------------------------------------------------
-#define g_PRIOR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
+#define g_PRIOR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
 //-----------------------------------------------------------------------------
 //number of stochastic likelihood variances only currently supports 0 or 1
 //----------------------------------------------------------------------------
-#define g_VAR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
+#define g_VAR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
 //----------------------------------------------------------------------------
 #if ((g_PRIOR_TYPE == 'D') && (g_VAR_TYPE == 'D'))
 	const std::string e_hyper_type = "deterministic"; //"deterministic" or "stochastic"
