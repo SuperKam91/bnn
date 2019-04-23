@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>  // for high_resolution_clock for timing
-hhhhhhhhhhhh
+
 /* in-house code */
 #include "forward.hpp"
 #include "externs.hpp"
