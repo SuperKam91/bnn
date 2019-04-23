@@ -32,3 +32,14 @@ def get_chains_data2(chains_file):
 	"""
 	data = np.genfromtxt(chains_file)
 	return data[:,0] / data[:,0].sum(), data[:, 2:]
+
+def get_ev(stats_file):
+	"""
+	get E[log z] and std[log z] from .stats file
+	"""
+	with open(stats_file) as f:
+		ss = f.readlines()
+		l = ss[8]
+		Z = float(l.split()[2])
+		Z_err = float(l.split()[4])
+	return Z, Z_err

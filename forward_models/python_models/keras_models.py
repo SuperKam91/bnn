@@ -104,6 +104,17 @@ def coursera_mlp_ResNet_block(num_inputs, a0):
     z2 = tf.keras.layers.Add()([a0, z2_part])
     return tf.keras.layers.Activation('relu')(z2)
 
+def same_mlp_ResNet_block(num_inputs, a0):
+    """
+    in this ResNet architecture, intermediate (a1) layer
+    has same dimensions as a0 (input)/a2 (output). 
+    Uses coursera convention for output layer as above
+    (output includes bias and activation)
+    """
+    a1 = Dense(num_inputs, activation = 'relu')(a0)
+    z2_part = Dense(num_inputs, activation = 'linear')(a1)
+    z2 = tf.keras.layers.Add()([a0, z2_part])
+    return tf.keras.layers.Activation('relu')(z2)
 
 def mlp_ResNet_1(num_inputs, num_outputs, layer_sizes, ResNet_type = 'uap'):
     """
@@ -112,12 +123,15 @@ def mlp_ResNet_1(num_inputs, num_outputs, layer_sizes, ResNet_type = 'uap'):
     could build a function to handle arbitrary num_blocks, but cba init.
     could just pass num_blocks as argument, as model is created in main,
     but don't to be consistent with np, tf and cpp implementations.
+    one block ResNet
     """
     num_blocks = 1
     if ResNet_type == 'uap':
         ResNet_block = uap_mlp_ResNet_block
     elif ResNet_type == 'coursera':
         ResNet_block = coursera_mlp_ResNet_block
+    elif ResNet_type == 'same':
+        ResNet_block = same_mlp_ResNet_block
     else:
         raise NotImplementedError
     a0 = Input(shape = (num_inputs,))
@@ -127,12 +141,17 @@ def mlp_ResNet_1(num_inputs, num_outputs, layer_sizes, ResNet_type = 'uap'):
         a0 = a2
     return Model(inputs = inputs, outputs = a2)
 
-def mlp_ResNet_2(num_inputs, num_outputs, layer_sizes, ResNet_type = 'coursera'):
+def mlp_ResNet_2(num_inputs, num_outputs, layer_sizes, ResNet_type = 'uap'):
+    """
+    two block ResNet
+    """
     num_blocks = 2
     if ResNet_type == 'uap':
         ResNet_block = uap_mlp_ResNet_block
     elif ResNet_type == 'coursera':
         ResNet_block = coursera_mlp_ResNet_block
+    elif ResNet_type == 'same':
+        ResNet_block = same_mlp_ResNet_block
     else:
         raise NotImplementedError
     a0 = Input(shape = (num_inputs,))

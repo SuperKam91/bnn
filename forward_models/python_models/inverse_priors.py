@@ -256,6 +256,22 @@ class recip_gamma_prior(gamma_prior):
 	def __call__(self, p):
 		return 1. / gamma_prior.__call__(self, p)
 
+class disc_uni_prior(base_prior):
+	"""
+	sample from discrete uniform prior. 
+	doesn't really need to inherit from base_prior as it doesn't use
+	scipy.stats rv object, but did so for consistency.
+	"""
+	def __init__(self, a, b):
+		"""
+		uniform on [a,b]
+		"""
+		self.a = a
+		self.b = b
+
+	def __call__(self, p):
+		return np.random.randint(self.a, self.b+1)
+
 def forced_identifiability_transform(p):
 	"""
 	don't think this can be vectorised in python,

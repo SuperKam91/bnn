@@ -25,7 +25,11 @@ endif
 CXXFLAGS += -fPIC
 
 #Whether to use multi-threading (i.e. in Eigen) or not
+<<<<<<< Updated upstream
 OMP=
+=======
+OMP=1
+>>>>>>> Stashed changes
 
 ifdef OMP
 CXXFLAGS += -fopenmp

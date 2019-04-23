@@ -310,7 +310,7 @@ def get_degen_dependence_lengths4(weight_shapes, independent = False):
 		dependence_lengths.extend((weight_shapes[-2][0] + 1) * weight_shapes[-2][1] * [1]) #+1 is for biases. assumes 2nd dim of final two weight_shapes are same (should be)
 	return dependence_lengths
 
-def get_hyper_dependence_lengths(weight_shapes, granularity, m_trainable_arr = None, b_trainable_arr = None):
+def get_hyper_dependence_lengths(weight_shapes, granularity = None, m_trainable_arr = None, b_trainable_arr = None):
 	"""
 	calculates hyper dependence lengths from weight shapes based on granularity.
 	if granularity is single, means a single set (two) of hyperparams is used for
@@ -322,7 +322,9 @@ def get_hyper_dependence_lengths(weight_shapes, granularity, m_trainable_arr = N
 	layer. this is the granularity used in neal's ARD model, as it essentially determines which inputs
 	are relevant and which aren't
 	"""
-	if granularity == 'single':
+	if granularity == None:
+		return []
+	elif granularity == 'single':
 		return [1]
 	elif granularity == 'layer':
 		if m_trainable_arr and b_trainable_arr:
@@ -369,11 +371,35 @@ def check_dtypes(y_true, y_pred):
 	return y_true, y_pred
 
 def get_km_weight_magnitudes(km):
-	model_weight_arrs = km.get_weights()
-	weight_mags = []
-	for model_weight_arr in model_weight_arrs:
-		weight_mags.append(np.linalg.norm(model_weight_arr))
-	return weight_mags, np.linalg.norm(weight_mags)
+	"""
+	weight_layer_mags are magnitudes of param sets corresponding
+	to the weights or biases per layer of the nn
+	"""
+	model_weight_layer_arrs = km.get_weights()
+	weight_layer_mags = []
+	for model_weight_layer_arr in model_weight_layer_arrs:
+		weight_layer_mags.append(np.linalg.norm(model_weight_layer_arr))
+	return weight_layer_mags, np.linalg.norm(weight_layer_mags)
+
+def get_km_weight_diff_magnitudes(km1, km2):
+	"""
+	both models should correspond to same architecture, just with different weight values
+	e.g. bnn vs mpe weight estimates
+	"""
+	model_weight_layer_arrs1 = km1
+	model_weight_layer_arrs2 = km2
+	# model_weight_layer_arrs1 = km1.get_weights()	
+	# model_weight_layer_arrs2 = km2.get_weights()
+	weight_diff_mags = []
+	weight_layer_diff_mags = []
+	for i in range(len(model_weight_layer_arrs1)):
+		weight_layer_diff_mags.append(np.linalg.norm(model_weight_layer_arrs2[i] - model_weight_layer_arrs1[i]))
+		temp1 = model_weight_layer_arrs1[i].flatten()
+		temp2 = model_weight_layer_arrs2[i].flatten()
+		for j in range(len(temp1)):
+			weight_diff_mags.append(np.linalg.norm(temp2[j] - temp1[j]))
+	return weight_diff_mags, weight_layer_diff_mags, np.linalg.norm(weight_diff_mags)
+
 
 if __name__ == '__main__':
 	num_inputs = 2

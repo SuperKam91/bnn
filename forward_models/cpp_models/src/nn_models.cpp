@@ -9,14 +9,20 @@
 
 Eigen::MatrixXd slp_sm(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     //I think row-wise implementations of activations in other nns is just for efficiency. here I will be more general and use col-wise
-    Eigen::MatrixXd z1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose());
+    Eigen::MatrixXd z1 = (x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose();
     return softmax(z1);
 }
 
 Eigen::MatrixXd slp(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     //I think row-wise implementations of activations in other nns is just for efficiency. here I will be more general and use col-wise
-    Eigen::MatrixXd z1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose());
+    Eigen::MatrixXd z1 = (x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose();
     return z1;
+}
+
+Eigen::MatrixXd mlp_tanh_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).array().tanh();
+    Eigen::MatrixXd a2 = (a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose();
+    return a2;
 }
 
 Eigen::MatrixXd mlp_test(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
@@ -35,15 +41,21 @@ Eigen::MatrixXd mlp_test2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eige
     return a2;
 }
 
+//map implementation (more efficient as doesn't have to copy x) ACTUALLY SEEMS TO WORK, SO FAR, SO WILL GO WITH IT.
+//------------------------------------------------------------------------------------------------------------------
+
 Eigen::MatrixXd mlp_uap_ResNet_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     uint num_blocks = 1;
     uint weight_slice = 3;
-    Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0 = x;
+    // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a0 = x;
+    long int row_num = x.rows();
+    long int col_num = x.cols();
+    Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0(x.data(), row_num, col_num);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2;
     for (uint i = 0; i < num_blocks; ++i) {
-    std::cout<<w.size()<<std::endl;
         a2 = mlp_uap_ResNet_block(a0, w.at(i * weight_slice), w.at((i * weight_slice) + 1), w.at((i * weight_slice) + 2));
-        a0 = a2;
+        // a0 = a2;
+        new (&a0) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > (a2.data(), row_num, col_num);
     }
     Eigen::MatrixXd output = a2; //convert to columnwise for returning value. i.e. to be consistent with other nn_models. creates a copy of a2 to do this, however.
     return output;
@@ -52,11 +64,15 @@ Eigen::MatrixXd mlp_uap_ResNet_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynami
 Eigen::MatrixXd mlp_coursera_ResNet_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     uint num_blocks = 1;
     uint weight_slice = 4;
-    Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0 = x;
+    // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a0 = x;
+    long int row_num = x.rows();
+    long int col_num = x.cols();
+    Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0(x.data(), row_num, col_num);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2;
     for (uint i = 0; i < num_blocks; ++i) {
         a2 = mlp_coursera_ResNet_block(a0, w.at(i * weight_slice), w.at((i * weight_slice) + 1), w.at((i * weight_slice) + 2), w.at((i * weight_slice) + 3));
-        a0 = a2;
+        // a0 = a2;        
+        new (&a0) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > (a2.data(), row_num, col_num);
     }
     Eigen::MatrixXd output = a2;
     return output;
@@ -66,17 +82,10 @@ Eigen::MatrixXd mlp_coursera_ResNet_1(Eigen::Ref <Eigen::Matrix<double, Eigen::D
 Eigen::MatrixXd mlp_uap_ResNet_2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     uint num_blocks = 2;
     uint weight_slice = 3;
-    //may be more efficient way of doing this using a ref or map if can find out how to change what they point to 
-    //(i.e. change them from pointing to x to point to a2 in loop). apparently can do it with map and the new assignment operator,
-    //but have had bad experiences of using this in the past. 
-    //with current implementation, have to copy x over to a0
     // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a0 = x;
-    //map implementation (more efficient as doesn't have to copy x) ACTUALLY SEEMS TO WORK, SO FAR, SO WILL GO WITH IT.
-    //------------------------------------------------------------------------------------------------------------------
     long int row_num = x.rows();
     long int col_num = x.cols();
     Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0(x.data(), row_num, col_num);
-    //------------------------------------------------------------------------------------------------------------------
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2;
     for (uint i = 0; i < num_blocks; ++i) {
         a2 = mlp_uap_ResNet_block(a0, w.at(i * weight_slice), w.at((i * weight_slice) + 1), w.at((i * weight_slice) + 2));
@@ -92,15 +101,21 @@ Eigen::MatrixXd mlp_uap_ResNet_2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynami
 Eigen::MatrixXd mlp_coursera_ResNet_2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     uint num_blocks = 2;
     uint weight_slice = 4;
-    Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0 = x;
+    // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a0 = x;
+    long int row_num = x.rows();
+    long int col_num = x.cols();
+    Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0(x.data(), row_num, col_num);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2;
     for (uint i = 0; i < num_blocks; ++i) {
         a2 = mlp_coursera_ResNet_block(a0, w.at(i * weight_slice), w.at((i * weight_slice) + 1), w.at((i * weight_slice) + 2), w.at((i * weight_slice) + 3));
-        a0 = a2;
+        // a0 = a2;
+        new (&a0) Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > (a2.data(), row_num, col_num);
     }
     Eigen::MatrixXd output = a2;
     return output;
 }
+
+//------------------------------------------------------------------------------------------------------------------
 
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mlp_uap_ResNet_block(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > a0, Eigen::Ref < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > w1, Eigen::Ref < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > w2, Eigen::Ref < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > w3) {
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((a0 * w1).rowwise() + (Eigen::Map< Eigen::VectorXd> (w2.data(), w2.size())).transpose()).unaryExpr(std::ptr_fun(relu));
