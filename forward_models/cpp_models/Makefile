@@ -2,14 +2,35 @@
 # Name of libraries
 libname = my_project
 
-# Choose OS -specific flags
-UNAME=$(shell uname)
-ifeq ($(UNAME), Linux)
-include Makefile_gnu
-else ifeq ($(UNAME), Darwin) 
-include Makefile_osx
-endif
 makefiles = $(wildcard Makefile*)
+
+# GCC flags
+CXX = g++
+LD = $(CXX) -g
+
+CXXFLAGS= #on xps laptop this already comes filled with default values, so get rid here.
+CXXFLAGS += -std=c++11
+
+#Whether to compile in debugged mode or not
+DEBUG=
+ifdef DEBUG
+# Debugging
+CXXFLAGS += -g -O0 -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused -Wconversion -Weffc++ -Wfatal-errors -ftemplate-backtrace-limit=0 #-Werror 
+else
+# Optimised
+CXXFLAGS += -O3 -DEIGEN_NO_DEBUG	
+endif
+
+# Shared object (don't know what this does)
+CXXFLAGS += -fPIC
+
+#Whether to use multi-threading (i.e. in Eigen) or not
+OMP=
+
+ifdef OMP
+CXXFLAGS += -fopenmp
+LDFLAGS += -fopenmp
+endif
 
 # Directory definitions
 source_dir = $(PWD)/src
@@ -112,7 +133,7 @@ tags: $(all_srcs)
 .PHONY: clean main test
 
 clean:
-	$(RM) -r $(objs) $(deps) $(build_dir)/main.*
+	$(RM) -r $(objs) $(deps) $(build_dir)/main.* $(build_dir)/scratch_main.* $(build_dir)/test_main.*
 
 purge: clean
 	$(RM) -r $(build_dir) $(lib_dir)
