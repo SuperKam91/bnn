@@ -25,6 +25,60 @@ Eigen::MatrixXd mlp_tanh_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eig
     return a2;
 }
 
+Eigen::MatrixXd mlp_tanh_2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).array().tanh();
+    Eigen::MatrixXd a3 = (a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose();
+    return a3;
+}
+
+Eigen::MatrixXd mlp_tanh_3(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a3 = ((a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose()).array().tanh();
+    Eigen::MatrixXd a4 = (a3 * w[6]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[7].data(), w[7].size())).transpose();
+    return a4;
+}
+
+Eigen::MatrixXd mlp_tanh_4(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a3 = ((a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose()).array().tanh();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a4 = ((a3 * w[6]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[7].data(), w[7].size())).transpose()).array().tanh();
+    Eigen::MatrixXd a5 = (a4 * w[8]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[9].data(), w[9].size())).transpose();
+    return a5;
+}
+
+Eigen::MatrixXd mlp_relu_1(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::MatrixXd a2 = (a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose();
+    return a2;
+}
+
+Eigen::MatrixXd mlp_relu_2(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::MatrixXd a3 = (a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose();
+    return a3;
+}
+
+Eigen::MatrixXd mlp_relu_3(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a3 = ((a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::MatrixXd a4 = (a3 * w[6]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[7].data(), w[7].size())).transpose();
+    return a4;
+}
+
+Eigen::MatrixXd mlp_relu_4(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = ((x * w[0]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[1].data(), w[1].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a2 = ((a1 * w[2]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[3].data(), w[3].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a3 = ((a2 * w[4]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[5].data(), w[5].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a4 = ((a3 * w[6]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[7].data(), w[7].size())).transpose()).unaryExpr(std::ptr_fun(relu));
+    Eigen::MatrixXd a5 = (a4 * w[8]).rowwise() + (Eigen::Map< Eigen::VectorXd> (w[9].data(), w[9].size())).transpose();
+    return a5;
+}
+
 Eigen::MatrixXd mlp_test(Eigen::Ref <Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > x, std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > & w) {
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> a1 = (x * w[0]).array().tanh();
     Eigen::MatrixXd a2 = a1.rowwise().sum();

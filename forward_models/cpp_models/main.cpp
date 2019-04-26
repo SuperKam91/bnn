@@ -32,17 +32,13 @@ const uint g_b_size = 253;
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
-const std::vector<uint> g_l_sizes = {8};
-const std::vector<bool> g_trainable_w_v = {true, true};
-const std::vector<bool> g_trainable_b_v = {true, true};
+const std::vector<uint> g_l_sizes = {2,2};
+const std::vector<bool> g_trainable_w_v = {true, true, true};
+const std::vector<bool> g_trainable_b_v = {true, true, true};
 //external as it is needed by forward_test and polychord_interface
 const uint e_n_weights = calc_num_weights(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
 std::vector<uint> g_weight_shapes = get_weight_shapes(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
-<<<<<<< Updated upstream
-#define g_NEURAL_NETWORK mlp 
-=======
-#define g_NEURAL_NETWORK mlp_tanh_1
->>>>>>> Stashed changes
+#define g_NEURAL_NETWORK mlp_tanh_2
 //prior setup
 //-----------------------------------------------------------------------------
 bool g_independent = false;
@@ -62,7 +58,7 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 	const std::string e_var_type = "deterministic"; //"deterministic" or "stochastic"
 	std::vector<uint> g_prior_types = {4, 15};
 	std::vector<double> g_prior_hyperparams = {0., 1., 0., 1.};
-	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0};
 	inverse_prior e_ip(g_prior_types, g_prior_hyperparams, g_dependence_lengths, g_param_prior_types, e_n_weights);
 	//DO NOT CHANGE FOLLOWING LINES. e_sh_ip CLASS IS CREATED PURELY TO MAKE THE CODE COMPILE, IT WILL NEVER BE USED
 	//IN THIS CASE
@@ -163,11 +159,11 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //----------------------------------------------------------------------------
 const std::string e_data_dir = "../../data/uci/";
 const std::string e_data = "bh_50";
-const std::string g_x_path = e_data_dir + e_data + "_x_tr_3.csv";
-const std::string g_y_path = e_data_dir + e_data + "_y_tr_3.csv";
+const std::string g_x_path = e_data_dir + e_data + "_x_tr_5.csv";
+const std::string g_y_path = e_data_dir + e_data + "_y_tr_5.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_mlp_8_3"; //for chains
+const std::string e_data_suffix = "_mlp_2_2_5"; //for chains
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
 //this initialisation has to be done at global scope in some file, unless polychord wrapper is modified to take forward_prop object.
