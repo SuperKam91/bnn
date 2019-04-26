@@ -25,7 +25,7 @@ endif
 CXXFLAGS += -fPIC
 
 #Whether to use multi-threading (i.e. in Eigen) or not
-OMP=1
+OMP=
 
 ifdef OMP
 CXXFLAGS += -fopenmp

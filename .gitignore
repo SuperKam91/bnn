@@ -35,3 +35,9 @@ data/21_cm/*.txt
 data/21_cm/*.csv
 ### ignore cpp lib files
 forward_models/cpp_models/lib/
+### ignore jobscripts and batch run outputs
+forward_models/cpp_models/jobscripts/
+forward_models/cpp_models/run_outputs/
+### ignore hpc output files
+forward_models/cpp_models/slurm*.out
+forward_models/cpp_models/machine.file.*
