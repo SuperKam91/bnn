@@ -37,7 +37,8 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 ## data
 
-- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. 
+- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. Order of parameters is: f_*, V_c, f_X, tau,
+slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
 
 ## first thoughts on modelling process
 
@@ -64,6 +65,10 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 ## further thoughts
 
 - They calculate error on each time series for given parameter set (~1700 of these for testing data), and plot histogram of errors associated with each of these sets.
+
+## second set of data
+
+- First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_*, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 4000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before. Now two sets of signal data, T21 and xHI. Have emailed Anastasia to ask what difference is.
 
 # main work
 
