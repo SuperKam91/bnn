@@ -107,7 +107,7 @@ slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
 
 - Neal's result (with same simple model as Mackay) on test data is similar to the Mackay best evidence model's results, but not as good as his best test error model results. Performance didn't necessarily get worse with larger networks for BNNs, but did for MAP estimates (though don't think this treated hyperparameters as stochastic).
 
-- n.b. hyperparams in first layer indicate which inputs to network are important. using it generalises to test data better, as irrelevant attributes fit to noise in train.
+- n.b. hyperparams in first layer indicate which inputs to network are important. using it generalises to test data better, as irrelevant attributes fit to noise in train. Furthermore, Neal scales hyperprior (gamma parameter w, which is mean precision) by number of units in previous layer i.e. for layer i w_i -> w_i * H_{i-1} for i >= 2 (note he doesn't scale first hidden layer). Note that he does not use this scaling on the biases, in particular, for hidden layers, biases are given standard hyperprior, and for output layer the biases aren't given a stochastic variance at all (instead they are usually fixed to a Gaussian with unit variance).
 
 - larger network is, more uncertain it is to out of training distribution data.
 
