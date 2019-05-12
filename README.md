@@ -178,6 +178,8 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 # thoughts scratchpad
 
+- For the runs with stochastic hyperparameters I have made a bit of an adaption. According to Neal, the biases should never be scaled (unlike the weights). Thus for the layer and input_size granularity cases, the biases are given their own hyperpriors. For consistency I also give the biases in the first hidden layer their own separate hyperpriors (as sharing them with weights in first layer doesn't seem fair, if in other layers, where biases aren't scaled but weights are, they get their own separate hyperprior).
+
 - In general tf models can't be used with sklearn's grid/random search methods, but apparently it can be used with: https://ray.readthedocs.io/en/latest/tune.html. tf required to reach most granularity in hyperparameter tuning e.g. different regularisation constants for each input to layer (c.f. input_size granularity in bnns).
 
 - Turns out you can also use keras models with sklearn's gridsearch (and presumably randomised search), see: https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/. This allows one to be more granular with hyperparameters, such as regularisation constant for each layer, number of nodes per layer, number of layers, different activations for each layer, dropout regularisation, etc. Requires the use of keras->sklearn wrappers, see: https://keras.io/scikit-learn-api/.
