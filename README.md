@@ -68,7 +68,7 @@ slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
 
 ## second set of data
 
-- First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_*, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 4000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before.
+- First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_{star}, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 4000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before.
 
 # main work
 
