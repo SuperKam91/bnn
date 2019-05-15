@@ -70,6 +70,14 @@ slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
 
 - First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_{star}, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 40000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before.
 
+## nn runs
+
+- For now, concentrating on 2_phys datasets, which have same split as paper (split timeseries not datapoints), and only have physical points. 
+
+- MLP_16_16_16 (tanh activations) did a pretty good job, getting an rmse error of ~0.041, and a rmse ts mean error of 0.095.
+
+- MLP_16_16_16_16 (tanh activations) is inferior, either stuck on plateau or having numerical issues.
+
 # main work
 
 - Run mlp bnns first with no stochastics, then with different granularities of prior and stochastic var. At each stage, repeat for different sized nns. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity. NOTE FOR RUNS BH_50_R_MLP_2, BH_50_R_MLP_4, AND BH_50_R_MLP_8, THINK I ACCIDENTALLY PUT SORTED GAUSSIAN PRIOR ON OUTPUT LAYER INTERCEPT INSTEAD OF VANILLA GAUSSIAN. SHOULDN'T HAVE ANY EFFECT AS DEGEN DEPENDENCE LENGTH IS 1.
