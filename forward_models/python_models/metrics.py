@@ -330,7 +330,7 @@ def twenty_one_cm_rmse_higher_order(mean, var):
 		return np.sqrt(np.mean((y_t - y_p)**2.)) / np.max(np.abs(y_t))
 	return twenty_one_cm_rmse
 
-def twenty_one_cm_rmse_ts_higher_order(mean, var, n_z):
+def twenty_one_cm_rmse_ts_higher_order(mean, var, n_z, out = False):
 	"""
 	higher order funcs for ts rmse, returns either
 	array of rmses, or mean of rmses
@@ -338,25 +338,34 @@ def twenty_one_cm_rmse_ts_higher_order(mean, var, n_z):
 	def twenty_one_cm_rmse_ts(y_true, y_pred):	
 		y_t = np.sqrt(var) * y_true + mean
 		y_p = np.sqrt(var) * y_pred + mean
-		print y_t.mean()
-		print y_p.mean()
-		print y_t.var()
-		print y_p.var()
+		if out:
+			print "y_true (unscaled) mean"
+			print y_t.mean()
+			print "y_pred (unscaled) mean"
+			print y_p.mean()
+			print "y_true (unscaled) variance"
+			print y_t.var()
+			print "y_pred (unscaled) variance"
+			print y_p.var()
 		errs = []
 		for i in range(y_pred.shape[0] / n_z - 1):
 			errs.append(np.sqrt(np.mean((y_t[i * n_z:(i + 1) * n_z] - y_p[i * n_z:(i + 1) * n_z])**2.)) / np.max(np.abs(y_t[i * n_z:(i + 1) * n_z])))
-			errs.append(np.sqrt(np.mean((y_t[-1 * n_z:] - y_p[-1 * n_z:])**2.)) / np.max(np.abs(y_t[-1 * n_z:])))
+		errs.append(np.sqrt(np.mean((y_t[-1 * n_z:] - y_p[-1 * n_z:])**2.)) / np.max(np.abs(y_t[-1 * n_z:])))
+		print len(errs)
 		return np.array(errs)
 	return twenty_one_cm_rmse_ts
 
-def twenty_one_cm_rmse_ts_mean_higher_order(mean, var, n_z):
+def twenty_one_cm_rmse_ts_mean_higher_order(mean, var, n_z, out = False):
 	"""
 	higher order func which returns mean value of
 	ts rmse errors
 	"""
 	higher_order_f = twenty_one_cm_rmse_ts_higher_order(mean, var, n_z)
 	def twenty_one_cm_rmse_ts_mean(y_true, y_pred):
-		return np.mean(higher_order_f(y_true, y_pred))
+		m = np.mean(higher_order_f(y_true, y_pred))
+		if out:
+			print m
+		return m
 	return twenty_one_cm_rmse_ts_mean
 
 if __name__ == '__main__':

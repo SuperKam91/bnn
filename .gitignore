@@ -30,8 +30,5 @@ forward_models/python_models/tf_plots/
 forward_models/cpp_models/cpp_plots/
 ### ignore mnist datasets for now
 MPE_examples/autoencoders/MNIST_data/
-### ignore 21cm data
-data/21_cm/*.txt
-data/21_cm/*.csv
 ### ignore cpp lib files
 forward_models/cpp_models/lib/

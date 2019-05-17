@@ -159,11 +159,11 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //----------------------------------------------------------------------------
 const std::string e_data_dir = "../../data/uci/";
 const std::string e_data = "bh_50";
-const std::string g_x_path = e_data_dir + e_data + "_x_tr_5.csv";
-const std::string g_y_path = e_data_dir + e_data + "_y_tr_5.csv";
+const std::string g_x_path = e_data_dir + e_data + "_x_tr_10.csv";
+const std::string g_y_path = e_data_dir + e_data + "_y_tr_10.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_mlp_2_2_5"; //for chains
+const std::string e_data_suffix = "_mlp_2_2_10"; //for chains
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
 //this initialisation has to be done at global scope in some file, unless polychord wrapper is modified to take forward_prop object.
