@@ -37,7 +37,8 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 ## data
 
-- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. 
+- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. Order of parameters is: f_*, V_c, f_X, tau,
+slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
 
 ## first thoughts on modelling process
 
@@ -65,13 +66,25 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - They calculate error on each time series for given parameter set (~1700 of these for testing data), and plot histogram of errors associated with each of these sets.
 
+## second set of data
+
+- First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_{star}, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 40000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before.
+
+## nn runs
+
+- For now, concentrating on 2_phys datasets, which have same split as paper (split timeseries not datapoints), and only have physical points. 
+
+- MLP_16_16_16 (tanh activations) did a pretty good job, getting an rmse error of ~0.041, and a rmse ts mean error of 0.095.
+
+- MLP_16_16_16_16 (tanh activations) is inferior, either stuck on plateau or having numerical issues.
+
 # main work
 
-- Run mlp bnns first with no stochastics, then with different granularities of prior, then including stochastic var. Then include more nodes in hidden layer and repeat. Then increase number of layers and repeat. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity.
-- If get time, implement stochastic number of layers, number of nodes, maybe even types of activations. Note for former two, this generally requires a reversible-jump MCMC method as the size of the parameter space changes as the nn size changes. But Hee's paper claims it can be done with nested sampling, though I'm not sure how accurate the evidence values will be.
+- Run mlp bnns first with no stochastics, then with different granularities of prior and stochastic var. At each stage, repeat for different sized nns. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity. NOTE FOR RUNS BH_50_R_MLP_2, BH_50_R_MLP_4, AND BH_50_R_MLP_8, THINK I ACCIDENTALLY PUT SORTED GAUSSIAN PRIOR ON OUTPUT LAYER INTERCEPT INSTEAD OF VANILLA GAUSSIAN. SHOULDN'T HAVE ANY EFFECT AS DEGEN DEPENDENCE LENGTH IS 1.
+- Can then piece together these runs to see how evidence/predictions change as a function of the hyperparameters dictating the neural network size, and activation type. Nice divide here as these are discrete hyperparameters.
 - Will be good to see how test performance varies as a function of these things. May be good to also compare with traditional equivalents, where they use randomised search/Bayes optimisation to select model hyperparams. However, getting same granularity on hyperparameters will be very difficult in some cases (e.g. input_size granularity on stochastic prior hyperparams). 
 - Also want to take advantage of polychord’s no derivatives requirement. May be the case that nns which are usually associated with numerical difficulties (e.g. very deep nns or ones with more complex activations) actually perform very well when trained with PolyChord, as these issues are no longer relevant.
-- Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function. 
+- Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function. NEED TO THINK IF PIECING TOGETHER METHOD IS VALID FOR REJECTION BASED ALGORITHMS E.G. HAMILTONIAN MCMC. TBH I THINK IT DOES
 - On that note, could look at traditional performance using hierarchical Bayes on stochastic var and prior hyperparams as I don’t think this has ever been done before. However, don’t think I will do this
 
 # other stuff
@@ -102,7 +115,7 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - Neal's result (with same simple model as Mackay) on test data is similar to the Mackay best evidence model's results, but not as good as his best test error model results. Performance didn't necessarily get worse with larger networks for BNNs, but did for MAP estimates (though don't think this treated hyperparameters as stochastic).
 
-- n.b. hyperparams in first layer indicate which inputs to network are important. using it generalises to test data better, as irrelevant attributes fit to noise in train.
+- n.b. hyperparams in first layer indicate which inputs to network are important. using it generalises to test data better, as irrelevant attributes fit to noise in train. Furthermore, Neal scales hyperprior (gamma parameter w, which is mean precision) by number of units in previous layer i.e. for layer i w_i -> w_i * H_{i-1} for i >= 2 (note he doesn't scale first hidden layer). Note that he does not use this scaling on the biases, in particular, for hidden layers, biases are given standard hyperprior, and for output layer the biases aren't given a stochastic variance at all (instead they are usually fixed to a Gaussian with unit variance).
 
 - larger network is, more uncertain it is to out of training distribution data.
 
@@ -172,6 +185,8 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 - papers on restricted Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
 
 # thoughts scratchpad
+
+- For the runs with stochastic hyperparameters I have made a bit of an adaption. According to Neal, the biases should never be scaled (unlike the weights). Thus for the layer and input_size granularity cases, the biases are given their own hyperpriors. For consistency I also give the biases in the first hidden layer their own separate hyperpriors (as sharing them with weights in first layer doesn't seem fair, if in other layers, where biases aren't scaled but weights are, they get their own separate hyperprior).
 
 - In general tf models can't be used with sklearn's grid/random search methods, but apparently it can be used with: https://ray.readthedocs.io/en/latest/tune.html. tf required to reach most granularity in hyperparameter tuning e.g. different regularisation constants for each input to layer (c.f. input_size granularity in bnns).
 
