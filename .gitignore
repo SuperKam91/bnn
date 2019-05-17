@@ -41,3 +41,5 @@ forward_models/cpp_models/run_outputs/
 ### ignore hpc output files
 forward_models/cpp_models/slurm*.out
 forward_models/cpp_models/machine.file.*
+### ignore hpc scripting python file
+forward_models/cpp_models/hpc_script.py
