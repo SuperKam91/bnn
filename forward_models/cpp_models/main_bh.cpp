@@ -25,20 +25,20 @@
 //but easier to do this in python and fill in values here manually
 //data parameters
 //-----------------------------------------------------------------------------
-const uint g_n_inputs = 8;
+const uint g_n_inputs = 13;
 const uint g_n_outputs = 1;
-const uint g_m = 3070608;
-const uint g_b_size = 3070608; 
+const uint g_m = 253;
+const uint g_b_size = 253; 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
-const std::vector<uint> g_l_sizes = {8};
-const std::vector<bool> g_trainable_w_v = {true, true};
-const std::vector<bool> g_trainable_b_v = {true, true};
+const std::vector<uint> g_l_sizes = {4, 4, 4, 4};
+const std::vector<bool> g_trainable_w_v = {true, true, true, true, true};
+const std::vector<bool> g_trainable_b_v = {true, true, true, true, true};
 //external as it is needed by forward_test and polychord_interface
 const uint e_n_weights = calc_num_weights(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
 std::vector<uint> g_weight_shapes = get_weight_shapes(g_n_inputs, g_l_sizes, g_n_outputs, g_trainable_w_v, g_trainable_b_v);
-#define g_NEURAL_NETWORK mlp_tanh_1
+#define g_NEURAL_NETWORK mlp_tanh_4
 //prior setup
 //-----------------------------------------------------------------------------
 bool g_independent = false;
@@ -47,18 +47,18 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //-----------------------------------------------------------------------------
 //first determine whether to use stochastic or deterministic hyperparameters
 //-----------------------------------------------------------------------------
-#define g_PRIOR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
+#define g_PRIOR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
 //-----------------------------------------------------------------------------
 //number of stochastic likelihood variances only currently supports 0 or 1
 //----------------------------------------------------------------------------
-#define g_VAR_TYPE 'D' //'D' for deterministic or 'S' for stochastic
+#define g_VAR_TYPE 'S' //'D' for deterministic or 'S' for stochastic
 //----------------------------------------------------------------------------
 #if ((g_PRIOR_TYPE == 'D') && (g_VAR_TYPE == 'D'))
 	const std::string e_hyper_type = "deterministic"; //"deterministic" or "stochastic"
 	const std::string e_var_type = "deterministic"; //"deterministic" or "stochastic"
 	std::vector<uint> g_prior_types = {4, 15};
 	std::vector<double> g_prior_hyperparams = {0., 1., 0., 1.};
-	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
 	inverse_prior e_ip(g_prior_types, g_prior_hyperparams, g_dependence_lengths, g_param_prior_types, e_n_weights);
 	//DO NOT CHANGE FOLLOWING LINES. e_sh_ip CLASS IS CREATED PURELY TO MAKE THE CODE COMPILE, IT WILL NEVER BE USED
 	//IN THIS CASE
@@ -121,33 +121,21 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 #elif ((g_PRIOR_TYPE == 'S') && (g_VAR_TYPE == 'S'))
 	const std::string e_hyper_type = "stochastic"; //"deterministic" or "stochastic"
 	const std::string e_var_type = "stochastic"; //"deterministic" or "stochastic"
-	std::string g_granularity = "single"; //"single", "layer" or "input_size"
-	// std::string g_granularity = "layer";
-	// std::string g_granularity = "input_size";
+	std::string g_granularity = "input_size"; //"single", "layer" or "input_size"
 	//std::vector<uint> g_hyper_dependence_lengths = get_hyper_dependence_lengths(g_weight_shapes, g_granularity);
-	std::vector<uint> g_hyper_dependence_lengths = {1}; //single
-	// std::vector<uint> g_hyper_dependence_lengths = {72, 9}; //layer
-	// std::vector<uint> g_hyper_dependence_lengths = {8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1}; //input_size
+	std::vector<uint> g_hyper_dependence_lengths = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1};
 	std::vector<uint> g_var_dependence_lengths = {1};
 	const uint e_n_stoc = static_cast<uint>(g_hyper_dependence_lengths.size());
 	const uint e_n_stoc_var = static_cast<uint>(g_var_dependence_lengths.size());
-	std::vector<uint> g_hyperprior_types = {9}; //single
-	// std::vector<uint> g_hyperprior_types = {9}; //layer
-	// std::vector<uint> g_hyperprior_types = {9, 9}; //input_size
+	std::vector<uint> g_hyperprior_types = {9, 9, 9, 9, 9};
 	std::vector<uint> g_var_prior_types = {10};
 	std::vector<uint> g_prior_types = {4, 15};
-	std::vector<double> g_hyperprior_params = {2. / 2., 2. / (2. * 1.)}; //single
-	// std::vector<double> g_hyperprior_params = {2. / 2., 2. / (2. * 1.)}; //layer
-	// std::vector<double> g_hyperprior_params = {2. / 2., 2. / (2. * 1.), 2. / 2., 2. / (2. * 1. * static_cast<double>(g_l_sizes.at(0)))}; //input_size
+	std::vector<double> g_hyperprior_params = {2. / 2., 2. / (2. * 1.), 2. / 2., 2. / (2. * 1. * static_cast<double>(g_l_sizes.at(0))), 2. / 2., 2. / (2. * 1. * static_cast<double>(g_l_sizes.at(1))), 2. / 2., 2. / (2. * 1. * static_cast<double>(g_l_sizes.at(2))), 2. / 2., 2. / (2. * 1. * static_cast<double>(g_l_sizes.at(3)))};
 	std::vector<double> g_var_prior_params = {2. / 2., 2. / (2. * 1.)};
-	std::vector<double> g_prior_hyperparams = {0}; //single
-	// std::vector<double> g_prior_hyperparams = {0.}; //layer
-	// std::vector<double> g_prior_hyperparams = {0., 0.}; //input_size
-	std::vector<uint> g_param_hyperprior_types = {0}; //single
-	// std::vector<uint> g_param_hyperprior_types = {0, 0}; //layer
-	// std::vector<uint> g_param_hyperprior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0}; //input_size
+	std::vector<double> g_prior_hyperparams = {0., 0., 0., 0., 0.};
+	std::vector<uint> g_param_hyperprior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 2, 2, 2, 2, 0, 3, 3, 3, 3, 0, 4, 4, 4, 4, 0};
 	std::vector<uint> g_var_param_prior_types = {0};
-	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	std::vector<uint> g_param_prior_types = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
 	svh_inverse_prior e_svh_ip(g_hyperprior_types, g_var_prior_types, g_prior_types, g_hyperprior_params, g_var_prior_params, g_prior_hyperparams, g_hyper_dependence_lengths, g_var_dependence_lengths, g_dependence_lengths, g_param_hyperprior_types, g_var_param_prior_types, g_param_prior_types, e_n_stoc_var, e_n_stoc, e_n_weights);
 	//DO NOT CHANGE FOLLOWING LINES. e_ip CLASS IS CREATED PURELY TO MAKE THE CODE COMPILE, IT WILL NEVER BE USED
 	//IN THIS CASE
@@ -170,17 +158,13 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //-----------------------------------------------------------------------------
 //i/o files. see polychord_interfaces.cpp for specifying chains file_root
 //----------------------------------------------------------------------------
-const std::string e_data_dir = "../../data/21cm/";
-const std::string e_data = "8_params_21_2";
-const std::string g_x_path = e_data_dir + e_data + "_x_phys_tr.csv";
-const std::string g_y_path = e_data_dir + e_data + "_y_phys_tr.csv";
+const std::string e_data_dir = "../../data/uci/";
+const std::string e_data = "bh_50";
+const std::string g_x_path = e_data_dir + e_data + "_x_tr_10.csv";
+const std::string g_y_path = e_data_dir + e_data + "_y_tr_10.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_phys_mlp_8"; //for chains
-// const std::string e_data_suffix = "_phys_sh_sv_mlp_8";
-// const std::string e_data_suffix = "_phys_lh_sv_mlp_8";
-// const std::string e_data_suffix = "_phys_ih_sv_mlp_8";
-
+const std::string e_data_suffix = "_ih_sv_mlp_4_4_4_4_10"; //for chains
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
 //this initialisation has to be done at global scope in some file, unless polychord wrapper is modified to take forward_prop object.

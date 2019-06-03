@@ -40,3 +40,6 @@ forward_models/cpp_models/slurm*.out
 forward_models/cpp_models/machine.file.*
 ### ignore hpc scripting python file
 forward_models/cpp_models/hpc_script.py
+### ignore 21cm data
+data/21cm/*
+
