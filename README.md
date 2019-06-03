@@ -33,51 +33,6 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - Look at hyperspherical energy paper
 
-# 21cm stuff
-
-## data
-
-- Seems that for 7 inputs (cosmo parameters), 21cm signal is given as a function of redshift, over 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. For training, m = 21562, for testing, m = 2073. Order of parameters is: f_*, V_c, f_X, tau,
-slope of X-ray SED (alpha), nu_min of X-ray SED, R_mfp
-
-## first thoughts on modelling process
-
-- From the data I initially thought that the objective was to predict the 21cm signal as a function of redshift, and so came up with the following ideas (turns out I was completely wrong):
-
-- For 7 inputs (cosmo parameters), predict 21cm signal as a function of redshift, over the 136 redshift bins. i.e. input to nn is m x 7, output is m x 136. However, this method would require a separate interpolation step for predictions at redshifts other than the discrete values used in training.
-
-- Could also formulate the problem differently. Could instead consider 136 separate nns each having 8 inputs (the 7 cosmo params and one redshift value), each having one output (the 21cm signal at that redshift), so that for each nn the input is m x 8 and the output is m x 1. However since each nn corresponding to the signal at different z is trained independently, think this would lose some information compared with above approach. This is because one would be sampling independently from 136 likelihoods rather than a joint likelihood over the full signal, which would have a profound effect in deep neural networks where a hidden layer parameter influences multiple outputs. Method would also require interpolation.
-
-- I think the best approach would be to treat z as an input parameter, and treat each of the 136 outputs as separate records of the data corresponding to one output (the 21cm signal). In this case the input to the nn is (m * 136) x 8 and the output is (m * 136) x 1. Technically this would give a nn whose output is continuous, but since the redshift values used for training only take a small number (136) of different values compared with the size of the training data, I'm not sure how well the function will generalise to out of training distribution redshift values.
-
-## thoughts on modelling after looking at paper
-
-- Turns out objective is to predict 21cm signal as a function of frequency (which isn't given?), and to do this a number of steps are taken, involving several regression and classification nns. The main premise is that a nn is used to learn the coefficients of a PCA (coefficients of each basis function) which spans the dataset, as well as key points of the signal.
-
-- Basically, uses nn with inputs and outputs of parameters I don't have, to make classifications and regressions, to make decisions on how many PCA components to use, the values of their coefficients, and the value of the emission at key astrophysical points.
-
-- For nns, use one hidden layer with 40 neurons, using the Levenberg–Marquardt algorithm to minimise the cost function, which I believe uses second order gradient information (and isn't implemented in tf as it only has first order methods).
-
-- The bagged trees algorithm is used for the classification problem. This algorithm ﬁts many decision trees, each time using a diﬀerent subset of the training set, and the decision is made by voting. After optimisation they choose to use bagged trees with 30 tree learners and the tree size was chosen using 5-fold cross-validation. 
-
-- To me it seems like machine learning is a relatively small part of this work. Much more time and effort is focused on the understanding of the underlying physics, and constructiing this pipeline of analyses than the actual training of regression/classification functions.
-
-## further thoughts
-
-- They calculate error on each time series for given parameter set (~1700 of these for testing data), and plot histogram of errors associated with each of these sets.
-
-## second set of data
-
-- First set was erroneous. Now have a second set, with 26599 training data and 2593 test data split. There are now eight input parameters (excluding z, the newly including parameter is zeta). Order of parameters is now apparently (checked and seems sensible): f_{star}, V_c, f_X, slope of X-ray SED (alpha), nu_min of X-ray SED, tau, R_mfp, zeta. Apparently cases with zeta / f_* > 40000 are unphysical, but are still included in the data. Data is binned in same redshift bins as before.
-
-## nn runs
-
-- For now, concentrating on 2_phys datasets, which have same split as paper (split timeseries not datapoints), and only have physical points. 
-
-- MLP_16_16_16 (tanh activations) did a pretty good job, getting an rmse error of ~0.041, and a rmse ts mean error of 0.095.
-
-- MLP_16_16_16_16 (tanh activations) is inferior, either stuck on plateau or having numerical issues.
-
 # main work
 
 - Run mlp bnns first with no stochastics, then with different granularities of prior and stochastic var. At each stage, repeat for different sized nns. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity. NOTE FOR RUNS BH_50_R_MLP_2, BH_50_R_MLP_4, AND BH_50_R_MLP_8, THINK I ACCIDENTALLY PUT SORTED GAUSSIAN PRIOR ON OUTPUT LAYER INTERCEPT INSTEAD OF VANILLA GAUSSIAN. SHOULDN'T HAVE ANY EFFECT AS DEGEN DEPENDENCE LENGTH IS 1.
@@ -187,19 +142,6 @@ https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 # thoughts scratchpad
 
 - For the runs with stochastic hyperparameters I have made a bit of an adaption. According to Neal, the biases should never be scaled (unlike the weights). Thus for the layer and input_size granularity cases, the biases are given their own hyperpriors. For consistency I also give the biases in the first hidden layer their own separate hyperpriors (as sharing them with weights in first layer doesn't seem fair, if in other layers, where biases aren't scaled but weights are, they get their own separate hyperprior).
-
-- In general tf models can't be used with sklearn's grid/random search methods, but apparently it can be used with: https://ray.readthedocs.io/en/latest/tune.html. tf required to reach most granularity in hyperparameter tuning e.g. different regularisation constants for each input to layer (c.f. input_size granularity in bnns).
-
-- Turns out you can also use keras models with sklearn's gridsearch (and presumably randomised search), see: https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/. This allows one to be more granular with hyperparameters, such as regularisation constant for each layer, number of nodes per layer, number of layers, different activations for each layer, dropout regularisation, etc. Requires the use of keras->sklearn wrappers, see: https://keras.io/scikit-learn-api/.
-Note to change ll variance, need to use a hack: define a higher order loss function which takes variance as argument, and returns loss function with that variance which can then be passed to model.compile. On each iteration, new higher order function will need to be called with the new variance value, and corresponding loss function passed to model.compile.
-
-- Randomised search can be thought of probabilistically as the same as gridsearch, but with non-uniform priors in general.
-
-- In sklearn you can also use a randomised search over network hyperparameters. Where instead of exhausting the hyperparameter grid, you sample from it according to probability distribution(s) governing each dimension of the grid.
-
-- Note grid search is sort of equivalent to assigning uniform priors to the hyperparameters, and then maximising the conditional posterior of the model parameters (conditional on the hyperparameters) on the training data. The maximisation of the conditional hyperparameters posterior (conditioned on the model parameters, which are different for each hyperparam set) is then obtained by  maximising over the cross validation data (or the best average in the case of k-fold). Not sure it's possible to formulate this mathematically, but I guess it can be interpreted as an approximation to the full posterior.
-
-- In sklearn you can perform a gridsearch over network hyperparameters of the sklearn nn models (reg constant of prior, number of layers and sizes, optimiser, optimisation hyperparameters, etc.). For regression problems this uses k-fold cross validation (for each run, partition training data into k equally sized sets, train network on k-1 of these, and use remaining set as cross validation set. Repeat this k times with the cross vaidation set being one of the different k sets each time, then average over the k evaluation metric scores to get the final metric value. The 'best' set of hyperparameters can then be used to train a model on the whole (all k-folds) of the training data, giving a final model). For classification it uses stratified k-fold (same as vanilla version but has roughly same proportion of each class in each fold).  
 
 - Posts on width vs length of neural networks: 
 https://stats.stackexchange.com/questions/222883/why-are-neural-networks-becoming-deeper-but-not-wider;
