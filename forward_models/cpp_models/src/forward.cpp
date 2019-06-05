@@ -301,7 +301,20 @@ uint forward_prop::get_seed_from_weights(Eigen::Ref<Eigen::VectorXd> w) {
     uint seed = static_cast<uint>(abs(n_dims_sum_weights));
     return seed;
 }
-void forward_prop::get_batch_from_seed(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
+
+void forward_prop::get_batch_from_seed_rand(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
+    std::srand(seed);
+    Eigen::VectorXd rand_d_m = (Eigen::VectorXd::Random(batch_size) + Eigen::VectorXd::Constant(batch_size, 1.)) / 2.; //uniform doubles on [0, 1)
+    std::cout << "scaled random" << std::endl;
+    std::cout << rand_d_m << std::endl;
+    Eigen::VectorXi rand_i_m = (rand_d_m * m).cast <int> (); //uniform integers on [0, m)
+    std::cout << "random int" << std::endl;
+    std::cout << rand_i_m << std::endl;
+    x_tr_b = x_tr_m(rand_i_m, Eigen::placeholders::all);
+    y_tr_b = y_tr_m(rand_i_m, Eigen::placeholders::all);
+}
+
+void forward_prop::get_batch_from_seed_shuffle(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
     rand_m_ind = Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1);
     std::srand(seed);
     std::random_shuffle(rand_m_ind.data(), rand_m_ind.data() + m); //shuffle all m indices even though only first batch_size are picked. may be way to make this more efficient
@@ -375,7 +388,7 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
         // acts on x_tr_b and y_tr_b
         if (e_deterministic_ll_batches) {
             const uint seed = get_seed_from_weights(w);
-            get_batch_from_seed(x_tr_b, y_tr_b, seed);
+            get_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
         }
         else {
             get_batches(x_tr_b, y_tr_b);
@@ -409,7 +422,7 @@ void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
         if (e_deterministic_ll_batches) {
             const uint seed = get_seed_from_weights(w);
-            get_batch_from_seed(x_tr_b, y_tr_b, seed);
+            get_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
         }
         else {
             get_batches(x_tr_b, y_tr_b);
@@ -420,7 +433,6 @@ void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
         std::cout << y_tr_b << std::endl;
         pred = nn_ptr(x_tr_b, weight_matrices);
         LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
-
     }
     std::cout << "LL var" << std::endl;
     std::cout << LL_var << std::endl;

@@ -7,18 +7,10 @@ using namespace std;
 
 int main()
 {
-unsigned int microseconds = 5e6;
+	srand(1);
+for(int i = 0; i < 5; i++) {
 
-MatrixXd A;
-A.setRandom(1000, 1000);
-
-MatrixXd B;
-B.setRandom(1000, 1000);
-
-usleep(microseconds);
-
-
-MatrixXd C;
-C=A*B;
-usleep(microseconds);
+        MatrixXf A = MatrixXf::Random(3, 3);
+        cout << A <<endl;
+}
 }

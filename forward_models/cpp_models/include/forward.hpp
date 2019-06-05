@@ -50,7 +50,8 @@ protected:
 	std::vector<double> file_2_vec(const uint &, const uint &, const std::string &);
     void get_batches(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b);
     uint get_seed_from_weights(Eigen::Ref<Eigen::VectorXd> w);
-    void get_batch_from_seed(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed);
+    void get_batch_from_seed_rand(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed);    
+    void get_batch_from_seed_shuffle(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed);
 	std::vector<Eigen::Map< Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> > > get_weight_matrices(Eigen::Ref<Eigen::VectorXd> w);
     void LL_stoc_var_setup();
     void no_stoc_var_update(Eigen::Ref<Eigen::VectorXd> vars);

@@ -29,7 +29,7 @@ const uint g_n_inputs = 8;
 const uint g_n_outputs = 1;
 const uint g_m = 3070608; 
 const bool e_deterministic_ll_batches = true;
-const uint g_b_size = 300; 
+const uint g_b_size = 3000; 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
@@ -177,10 +177,10 @@ const std::string g_x_path = e_data_dir + e_data + "_x_phys_tr.csv";
 const std::string g_y_path = e_data_dir + e_data + "_y_phys_tr.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_phys_mlp_8"; //for chains
-// const std::string e_data_suffix = "_phys_sh_sv_mlp_8";
-// const std::string e_data_suffix = "_phys_lh_sv_mlp_8";
-// const std::string e_data_suffix = "_phys_ih_sv_mlp_8";
+const std::string e_data_suffix = "_phys_mlp_8_3000b"; //for chains
+// const std::string e_data_suffix = "_phys_sh_sv_mlp_8_300";
+// const std::string e_data_suffix = "_phys_lh_sv_mlp_8_300";
+// const std::string e_data_suffix = "_phys_ih_sv_mlp_8_300";
 
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
@@ -232,6 +232,5 @@ int main() {
 	}
 	return 0;
 }
-
 
 
