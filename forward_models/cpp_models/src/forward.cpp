@@ -8,6 +8,7 @@
 /* in-house code */
 #include "forward.hpp"
 #include "loglikelihoods.hpp"
+#include "externs.hpp"
 
 using namespace std::placeholders; //for bind for ptr to class methods in stoc var setup
 
@@ -294,6 +295,20 @@ void forward_prop::get_batches(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dyna
     }
 }
 
+//calculate seed from weights according to seed = abs(int(sum(n_dims * weights))
+uint forward_prop::get_seed_from_weights(Eigen::Ref<Eigen::VectorXd> w) {
+    double n_dims_sum_weights = n_dims * w.sum(); //n_dims * sum(weights) same as sum(weights * n_dims)
+    uint seed = static_cast<uint>(abs(n_dims_sum_weights));
+    return seed;
+}
+void forward_prop::get_batch_from_seed(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
+    rand_m_ind = Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1);
+    std::srand(seed);
+    std::random_shuffle(rand_m_ind.data(), rand_m_ind.data() + m); //shuffle all m indices even though only first batch_size are picked. may be way to make this more efficient
+    x_tr_b = x_tr_m(rand_m_ind.segment(0, batch_size), Eigen::placeholders::all);
+    y_tr_b = y_tr_m(rand_m_ind.segment(0, batch_size), Eigen::placeholders::all);
+}
+
 void forward_prop::setup_LL(std::string LL_type_) {
     LL_type = LL_type_;
     if (LL_type == "gauss") {
@@ -358,7 +373,13 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
         // acts on x_tr_b and y_tr_b
-        get_batches(x_tr_b, y_tr_b);
+        if (e_deterministic_ll_batches) {
+            const uint seed = get_seed_from_weights(w);
+            get_batch_from_seed(x_tr_b, y_tr_b, seed);
+        }
+        else {
+            get_batches(x_tr_b, y_tr_b);
+        }        
         pred = nn_ptr(x_tr_b, weight_matrices);
         LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
     }
@@ -386,13 +407,20 @@ void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
     else if (m > batch_size) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
-        get_batches(x_tr_b, y_tr_b);
+        if (e_deterministic_ll_batches) {
+            const uint seed = get_seed_from_weights(w);
+            get_batch_from_seed(x_tr_b, y_tr_b, seed);
+        }
+        else {
+            get_batches(x_tr_b, y_tr_b);
+        }
         std::cout << "input batch:" << std::endl;
         std::cout << x_tr_b << std::endl;
         std::cout << "output batch:" << std::endl;
         std::cout << y_tr_b << std::endl;
         pred = nn_ptr(x_tr_b, weight_matrices);
         LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
+
     }
     std::cout << "LL var" << std::endl;
     std::cout << LL_var << std::endl;
