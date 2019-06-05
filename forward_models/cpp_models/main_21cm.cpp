@@ -28,7 +28,7 @@
 const uint g_n_inputs = 8;
 const uint g_n_outputs = 1;
 const uint g_m = 3070608;
-const uint g_b_size = 3070608; 
+const uint g_b_size = 3070608; //good choices would be 284, 318, 2703, 3408 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
