@@ -29,7 +29,7 @@ const uint g_n_inputs = 8;
 const uint g_n_outputs = 1;
 const uint g_m = 3070608; 
 const bool e_deterministic_ll_batches = true;
-const uint g_b_size = 300; 
+const uint g_b_size = 3000; 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
@@ -173,11 +173,11 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //----------------------------------------------------------------------------
 const std::string e_data_dir = "../../data/21cm/";
 const std::string e_data = "8_params_21_2";
-const std::string g_x_path = e_data_dir + e_data + "_x_phys_3000_tr.csv";
-const std::string g_y_path = e_data_dir + e_data + "_y_phys_3000_tr.csv";
+const std::string g_x_path = e_data_dir + e_data + "_x_phys_tr.csv";
+const std::string g_y_path = e_data_dir + e_data + "_y_phys_tr.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_phys_mlp_8_3000"; //for chains
+const std::string e_data_suffix = "_phys_mlp_8_3000b"; //for chains
 // const std::string e_data_suffix = "_phys_sh_sv_mlp_8_300";
 // const std::string e_data_suffix = "_phys_lh_sv_mlp_8_300";
 // const std::string e_data_suffix = "_phys_ih_sv_mlp_8_300";
