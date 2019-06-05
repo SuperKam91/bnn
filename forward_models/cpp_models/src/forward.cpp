@@ -305,11 +305,7 @@ uint forward_prop::get_seed_from_weights(Eigen::Ref<Eigen::VectorXd> w) {
 void forward_prop::get_batch_from_seed_rand(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
     std::srand(seed);
     Eigen::VectorXd rand_d_m = (Eigen::VectorXd::Random(batch_size) + Eigen::VectorXd::Constant(batch_size, 1.)) / 2.; //uniform doubles on [0, 1)
-    std::cout << "scaled random" << std::endl;
-    std::cout << rand_d_m << std::endl;
     Eigen::VectorXi rand_i_m = (rand_d_m * m).cast <int> (); //uniform integers on [0, m)
-    std::cout << "random int" << std::endl;
-    std::cout << rand_i_m << std::endl;
     x_tr_b = x_tr_m(rand_i_m, Eigen::placeholders::all);
     y_tr_b = y_tr_m(rand_i_m, Eigen::placeholders::all);
 }
