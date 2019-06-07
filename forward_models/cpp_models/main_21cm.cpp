@@ -28,7 +28,7 @@
 const uint g_n_inputs = 8;
 const uint g_n_outputs = 1;
 const uint g_m = 3070608; 
-const bool e_deterministic_ll_batches = true;
+const bool e_batch_type = "curve_param_deterministic"; //"normal", "param_deterministic", "curve_param_deterministic" (21cm only)
 const uint g_b_size = 300; 
 //-----------------------------------------------------------------------------
 //nn parameters

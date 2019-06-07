@@ -27,7 +27,7 @@ class bnn_predictor():
 		self.posterior_weights, self.LLs, self.stoch_hyperparams, self.stoch_vars, self.nn_params, self.weight_norm = input_tools.get_chains_data(chains_file, n_stoc, n_stoc_var)
 		stats_file = chains_file[:-4] + '.stats'
 		self.logZ, self.logZ_err = input_tools.get_ev(stats_file)
-		self.Z = Z_stats.calcEofZII(self.LogZ, self.logZ_err**2., 'linear') 
+		self.Z = Z_stats.calcEofZII(self.logZ, self.logZ_err**2., 'linear') 
 		self.Z_err = np.sqrt(Z_stats.calcVarZII(self.logZ_err**2., self.logZ, self.Z, 'linear'))
 		self.nn_param_sets = [self.nn_params[i] for i in range(len(self.posterior_weights))]
 		self.LL_var = 1. #for calculating LL on test data
@@ -94,11 +94,11 @@ class bnn_predictor():
 		for each set of nn parameters, compute prediction from x,
 		then take expectation over these predictions (w.r.t posterior) to get single prediction
 		"""
-		prediction = 0.
+		expectation = 0.
 		for i in range(len(self.posterior_weights)):
 			self.set_k_weights(self.nn_param_sets[i])
-			prediction += self.posterior_weights[i] * self.model.predict(self.x)
-		return prediction
+			expectation += self.posterior_weights[i] * self.model.predict(self.x)
+		return expectation
 
 	def expectation_prediction(self):
 		"""
@@ -129,7 +129,23 @@ class bnn_predictor():
 		self.set_k_weights(MLE_nn_param_set)
 		return self.model.predict(self.x)		
 
-	def bnn_trad_comp(self, bnn_type):
+	def predictions_expectation_and_std(self):
+		"""
+		expectation is calculated as in self.predictions_expectation().
+		std deviation on predictions is also calculated from expected prediction
+		and second moment of predictions
+		"""
+		expectation = 0.
+		EofXSq = 0.
+		for i in range(len(self.posterior_weights)):
+			self.set_k_weights(self.nn_param_sets[i])
+			prediction = self.model.predict(self.x)
+			expectation += self.posterior_weights[i] * prediction
+			EofXSq += self.posterior_weights[i] * prediction ** 2.
+		std_dev = np.sqrt(EofXSq - expectation ** 2.)
+		return expectation, std_dev
+
+	def set_k_weights_to_pred_type(self, bnn_type):
 		if type(bnn_type) == int:
 			bnn_nn_param_set = self.nn_param_sets[bnn_type]
 		elif type(bnn_type) == 'mpe' or type(bnn_type) == 'MPE':
@@ -139,8 +155,7 @@ class bnn_predictor():
 			argmax = np.argmax(self.LLs)
 			bnn_nn_param_set = self.nn_param_sets[argmax]
 		elif type(bnn_type) == 'expected weights':
-			bnn_nn_param_set = (self.nn_params.T * self.posterior_weights).T.sum(axis = 0)
-			
+			bnn_nn_param_set = (self.nn_params.T * self.posterior_weights).T.sum(axis = 0)	
 		self.set_k_weights(bnn_nn_param_set)
 
 

@@ -66,7 +66,8 @@ def slp_r(num_inputs, num_outputs, layer_sizes, reg_coeffs):
 
 def mlp_1_sm(num_inputs, num_outputs, layer_sizes):
     """
-    simple mlp nn with tanh and softmax activations
+    one lhidden ayer mlp nn with tanh hidden layer activation 
+    and softmax output layer activation
     """
     a0 = Input(shape = (num_inputs,))
     a1 = Dense(layer_sizes[0], activation = 'tanh')(a0)
@@ -81,6 +82,90 @@ def mlp_1_sm_r(num_inputs, num_outputs, layer_sizes, reg_coeffs):
     a0 = Input(shape = (num_inputs,))
     a1 = Dense(layer_sizes[0], activation = 'tanh', kernel_regularizer = Regularisers.l2(reg_coeffs[0]), bias_regularizer = Regularisers.l2(reg_coeffs[1]))(a0)
     prediction = Dense(num_outputs, activation='softmax', kernel_regularizer = Regularisers.l2(reg_coeffs[2]), bias_regularizer = Regularisers.l2(reg_coeffs[3]))(a1)
+    return Model(inputs = a0, outputs = prediction)
+
+def mlp_1(num_inputs, num_outputs, layer_sizes):
+    """
+    one hidden layer mlp nn with tanh activation for hidden layer and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'tanh')(a0)
+    prediction = Dense(num_outputs, activation='linear')(a1)
+    return Model(inputs = a0, outputs = prediction)
+
+def mlp_2(num_inputs, num_outputs, layer_sizes):
+    """
+    two hidden layer mlp nn with tanh activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'tanh')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'tanh')(a1)    
+    prediction = Dense(num_outputs, activation='linear')(a2)
+    return Model(inputs = a0, outputs = prediction)
+
+def mlp_3(num_inputs, num_outputs, layer_sizes):
+    """
+    three hidden layer mlp nn with tanh activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'tanh')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'tanh')(a1)    
+    a3 = Dense(layer_sizes[2], activation = 'tanh')(a2)    
+    prediction = Dense(num_outputs, activation='linear')(a3)
+    return Model(inputs = a0, outputs = prediction)
+
+def mlp_4(num_inputs, num_outputs, layer_sizes):
+    """
+    four hidden layer mlp nn with tanh activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'tanh')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'tanh')(a1)    
+    a3 = Dense(layer_sizes[2], activation = 'tanh')(a2)    
+    a4 = Dense(layer_sizes[3], activation = 'tanh')(a3)    
+    prediction = Dense(num_outputs, activation='linear')(a4)
+    return Model(inputs = a0, outputs = prediction)
+
+def relu_mlp_1(num_inputs, num_outputs, layer_sizes):
+    """
+    one hidden layer mlp nn with relu activation for hidden layer and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'relu')(a0)
+    prediction = Dense(num_outputs, activation='linear')(a1)
+    return Model(inputs = a0, outputs = prediction)
+
+def relu_mlp_2(num_inputs, num_outputs, layer_sizes):
+    """
+    two hidden layer mlp nn with relu activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'relu')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'relu')(a1)    
+    prediction = Dense(num_outputs, activation='linear')(a2)
+    return Model(inputs = a0, outputs = prediction)
+
+def relu_mlp_3(num_inputs, num_outputs, layer_sizes):
+    """
+    three hidden layer mlp nn with relu activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'relu')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'relu')(a1)    
+    a3 = Dense(layer_sizes[2], activation = 'relu')(a2)    
+    prediction = Dense(num_outputs, activation='linear')(a3)
+    return Model(inputs = a0, outputs = prediction)
+
+def relu_mlp_4(num_inputs, num_outputs, layer_sizes):
+    """
+    four hidden layer mlp nn with relu activation for hidden layers and linear output activation
+    """
+    a0 = Input(shape = (num_inputs,))
+    a1 = Dense(layer_sizes[0], activation = 'relu')(a0)
+    a2 = Dense(layer_sizes[1], activation = 'relu')(a1)    
+    a3 = Dense(layer_sizes[2], activation = 'relu')(a2)    
+    a4 = Dense(layer_sizes[3], activation = 'relu')(a3)    
+    prediction = Dense(num_outputs, activation='linear')(a4)
     return Model(inputs = a0, outputs = prediction)
 
 def uap_mlp_ResNet_block(num_inputs, a0):

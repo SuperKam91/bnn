@@ -368,6 +368,13 @@ def twenty_one_cm_rmse_ts_mean_higher_order(mean, var, n_z, out = False):
 		return m
 	return twenty_one_cm_rmse_ts_mean
 
+def mean_squared_error_std_dev(y_true, y_pred, y_pred_std_dev):
+	"""
+	calculates error on L = 1 / m * sum_{i = 1}^{i = m}(y_true - y_pred)^2 where
+	y_pred has error y_pred_std_dev and y_true has no error 
+	"""
+	return 2. / y_true.shape[0] * np.sqrt(np.sum(((y_true - y_pred) * y_pred_std_dev) ** 2.))
+
 if __name__ == '__main__':
 	np.random.seed(1)
 	y_true = np.arange(3*2)

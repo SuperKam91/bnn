@@ -27,9 +27,9 @@
 //-----------------------------------------------------------------------------
 const uint g_n_inputs = 8;
 const uint g_n_outputs = 1;
-const uint g_m = 3070608; 
-const bool e_deterministic_ll_batches = true;
-const uint g_b_size = 3000; 
+const uint g_m = 18; 
+const std::string e_batch_type = "curve_param_deterministic"; //"normal", "param_deterministic", "curve_param_deterministic" (21cm only)
+const uint g_b_size = 6; // must be multiple of n_z for "curve_param_deterministic" 
 //-----------------------------------------------------------------------------
 //nn parameters
 //-----------------------------------------------------------------------------
@@ -173,14 +173,14 @@ std::vector<uint> g_dependence_lengths = get_degen_dependence_lengths(g_weight_s
 //----------------------------------------------------------------------------
 const std::string e_data_dir = "../../data/21cm/";
 const std::string e_data = "8_params_21_2";
-const std::string g_x_path = e_data_dir + e_data + "_x_phys_tr.csv";
-const std::string g_y_path = e_data_dir + e_data + "_y_phys_tr.csv";
+const std::string g_x_path = e_data_dir + e_data + "_x_phys_300_tr.csv";
+const std::string g_y_path = e_data_dir + e_data + "_y_phys_300_tr.csv";
 const std::string e_chains_dir = "./cpp_chains/";
 const std::string e_weights_dir = "../../data/"; //for forward tests
-const std::string e_data_suffix = "_phys_mlp_8_3000b"; //for chains
-// const std::string e_data_suffix = "_phys_sh_sv_mlp_8_300";
-// const std::string e_data_suffix = "_phys_lh_sv_mlp_8_300";
-// const std::string e_data_suffix = "_phys_ih_sv_mlp_8_300";
+const std::string e_data_suffix = "_phys_mlp_8"; //for chains
+// const std::string e_data_suffix = "_phys_sh_sv_mlp_8";
+// const std::string e_data_suffix = "_phys_lh_sv_mlp_8";
+// const std::string e_data_suffix = "_phys_ih_sv_mlp_8";
 
 //create nn forward_prop class object
 //-----------------------------------------------------------------------------
@@ -194,8 +194,8 @@ int main() {
 	bool nn_prior_t = false;
 	bool prior_pft = false;
 	bool prior_spft = false;
-	bool forward_t_linear = false;
-	bool polychord1_run = true;
+	bool forward_t_linear = true;
+	bool polychord1_run = false;
 	bool profiling = false; //also dictates whether to print output or not
 	//setup ll, can't do this outside of function
 	e_nn.setup_LL("gauss"); // gauss, av_gauss, categorical_crossentropy, av_categorical_crossentropy, dummy
@@ -232,5 +232,6 @@ int main() {
 	}
 	return 0;
 }
+
 
 

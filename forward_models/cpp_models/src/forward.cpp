@@ -310,6 +310,26 @@ void forward_prop::get_batch_from_seed_rand(Eigen::Matrix<double, Eigen::Dynamic
     y_tr_b = y_tr_m(rand_i_m, Eigen::placeholders::all);
 }
 
+//for this function, batch_size must be divisible by n_z
+void forward_prop::get_curve_batch_from_seed_rand(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
+    const uint n_z = 3;
+    const uint curve_batch_size = batch_size / n_z;
+    Eigen::VectorXd rand_d_m = (Eigen::VectorXd::Random(curve_batch_size) + Eigen::VectorXd::Constant(curve_batch_size, 1.)) / 2.; //uniform doubles on [0, 1)
+    std::cout << "rand" << std::endl;
+    std::cout << rand_d_m << std::endl;
+    Eigen::VectorXi rand_curve_i_m = (rand_d_m * (m / n_z)).cast <int> (); //uniform integers on [0, m / n_z)
+    std::cout << "uniform integers" << std::endl;
+    std::cout << rand_curve_i_m << std::endl;    
+    Eigen::VectorXi rand_i_m(batch_size);
+    for (uint i = 0; i < curve_batch_size; ++i) {
+        rand_i_m.segment(i * n_z, n_z) = Eigen::VectorXi::LinSpaced(n_z, rand_curve_i_m(i) * n_z, (rand_curve_i_m(i) + 1) * n_z - 1);
+    }
+    std::cout << "indexes" << std::endl;
+    std::cout << rand_i_m << std::endl;
+    x_tr_b = x_tr_m(rand_i_m, Eigen::placeholders::all);
+    y_tr_b = y_tr_m(rand_i_m, Eigen::placeholders::all);    
+}
+
 void forward_prop::get_batch_from_seed_shuffle(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & x_tr_b, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & y_tr_b, uint seed) {
     rand_m_ind = Eigen::Matrix<uint, Eigen::Dynamic, 1>::LinSpaced(m, 0, m - 1);
     std::srand(seed);
@@ -382,13 +402,17 @@ double forward_prop::operator()(Eigen::Ref<Eigen::VectorXd> w) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
         // acts on x_tr_b and y_tr_b
-        if (e_deterministic_ll_batches) {
+        if (e_batch_type == "normal") {
+            get_batches(x_tr_b, y_tr_b);
+        }        
+        else if (e_batch_type == "param_deterministic") {
             const uint seed = get_seed_from_weights(w);
             get_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
         }
-        else {
-            get_batches(x_tr_b, y_tr_b);
-        }        
+        else if (e_batch_type == "curve_param_deterministic") {
+            const uint seed = get_seed_from_weights(w);
+            get_curve_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
+        }
         pred = nn_ptr(x_tr_b, weight_matrices);
         LL = LL_ptr(y_tr_b, pred, LL_var, LL_norm, LL_dim, batch_size);
     }
@@ -416,12 +440,16 @@ void forward_prop::test_output(Eigen::Ref<Eigen::VectorXd> w) {
     else if (m > batch_size) {
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_tr_b;
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> y_tr_b;
-        if (e_deterministic_ll_batches) {
+        if (e_batch_type == "normal") {
+            get_batches(x_tr_b, y_tr_b);
+        }        
+        else if (e_batch_type == "param_deterministic") {
             const uint seed = get_seed_from_weights(w);
             get_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
         }
-        else {
-            get_batches(x_tr_b, y_tr_b);
+        else if (e_batch_type == "curve_param_deterministic") {
+            const uint seed = get_seed_from_weights(w);
+            get_curve_batch_from_seed_rand(x_tr_b, y_tr_b, seed);
         }
         std::cout << "input batch:" << std::endl;
         std::cout << x_tr_b << std::endl;

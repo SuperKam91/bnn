@@ -9,7 +9,7 @@
 #include "inverse_stoc_hyper_priors.hpp"
 #include "inverse_stoc_var_hyper_priors.hpp"
 
-extern const bool e_deterministic_ll_batches;
+extern const std::string e_batch_type;
 extern forward_prop e_nn;
 extern const uint e_n_weights;
 extern const uint e_n_stoc;
