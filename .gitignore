@@ -42,4 +42,6 @@ forward_models/cpp_models/machine.file.*
 forward_models/cpp_models/hpc_script.py
 ### ignore 21cm data
 data/21cm/*
+### ignore bh predictions
+data/uci/predictions/*
 
