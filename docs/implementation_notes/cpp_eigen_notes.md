@@ -38,6 +38,8 @@ https://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 - good post on Eigen::Ref class:
 https://stackoverflow.com/questions/21132538/correct-usage-of-the-eigenref-class
 
+
+- For some reason on HPC, toggling openmp flag and adjusting number of threads environment variable has no effect on the PC likelihood speed calculations. Perhaps it is using threading regardless? Pretty sure when I fiddled with this on my local laptop, made signifcant differences
 # troubleshooting tips:
 
 - https://github.com/ethz-asl/eigen_catkin/wiki/Eigen-Memory-Issues
