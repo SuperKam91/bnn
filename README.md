@@ -42,6 +42,18 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function. NEED TO THINK IF PIECING TOGETHER METHOD IS VALID FOR REJECTION BASED ALGORITHMS E.G. HAMILTONIAN MCMC. TBH I THINK IT DOES
 - On that note, could look at traditional performance using hierarchical Bayes on stochastic var and prior hyperparams as I don’t think this has ever been done before. However, don’t think I will do this
 
+## nn runs
+
+- Various architectures and setups are trained to see how the test set error correlates with the Bayesian evidence. For each setup, a BNN is trained on 10 different randomisations of the train/test set split, each of which gives a value for the test set error and Bayesian evidence (and their errors). The total size of the BH dataset is 506, with 13 inputs and one output. a 50-50 split was used for the training and test data.
+
+- The following architectures were considered: (2), (4), (8), (2,2), (4,4), (2,2,2), (4,4,4), (2,2,2,2), (4,4,4,4).
+
+- For each architecture, the following nn types were considered: tanh activation no stochastic hyperparameters, relu activation no stochastic hyperparameters, tanh activation single hyperparameter (one hyperparameter for variance of all priors), tanh activation layer hyperparameter (one hyperparameter for weights in each hidden/output layer, one hyperparameter for biases in each hidden/output layer), tanh activation input_size hyperparameters (for given layer, one hyperparameter for each input to that layer, which is shared among all weights in the layer multiplying that same input, also one hyperparameter for biases per hidden/output layer). These hyperparameters control variance of priors of NN weights/biases (i.e. regularisation factors). For all stochastic hyperparameter runs one hyperparameter is used for the variance of the likelihood
+
+- Note for non-stochastic hyperparameter systems, likelihood variance is fixed to unity, all priors are zero mean Gaussians with unit variance. EXPLAIN GAMMA PRIORS AND RELATION TO VARIANCES AND STOCHASTIC HYPERPARAMS
+
+- EXPLAIN PC RUNS
+
 # other stuff
 
 - Think of L0 regularisation in terms of a prior.
