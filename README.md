@@ -48,11 +48,17 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - The following architectures were considered: (2), (4), (8), (2,2), (4,4), (2,2,2), (4,4,4), (2,2,2,2), (4,4,4,4).
 
-- For each architecture, the following nn types were considered: tanh activation no stochastic hyperparameters, relu activation no stochastic hyperparameters, tanh activation single hyperparameter (one hyperparameter for variance of all priors), tanh activation layer hyperparameter (one hyperparameter for weights in each hidden/output layer, one hyperparameter for biases in each hidden/output layer), tanh activation input_size hyperparameters (for given layer, one hyperparameter for each input to that layer, which is shared among all weights in the layer multiplying that same input, also one hyperparameter for biases per hidden/output layer). These hyperparameters control variance of priors of NN weights/biases (i.e. regularisation factors). For all stochastic hyperparameter runs one hyperparameter is used for the variance of the likelihood
+- For each architecture, the following nn types were considered: tanh activation no stochastic hyperparameters (fixed variances on likelihoods/priors), relu activation no stochastic hyperparameters, tanh activation single stochastic prior hyperparameter (one hyperparameter for variance of all priors), tanh activation layer prior hyperparameters (one hyperparameter for weights in each hidden/output layer, one hyperparameter for biases in each hidden/output layer), tanh activation input_size stochastic prior hyperparameters (for given layer, one hyperparameter for each input to that layer, which is shared among all weights in the layer multiplying that same input. Also one hyperparameter for biases per hidden/output layer). For all stochastic hyperparameter runs one hyperparameter is used for the variance of the likelihood.
 
-- Note for non-stochastic hyperparameter systems, likelihood variance is fixed to unity, all priors are zero mean Gaussians with unit variance. EXPLAIN GAMMA PRIORS AND RELATION TO VARIANCES AND STOCHASTIC HYPERPARAMS
+- Note for non-stochastic hyperparameter systems, likelihood variance is fixed to unity, all priors are zero mean Gaussians with unit variance. For stochastic hyperparameter systems, the prior hyperparameters control variance of priors of NN weights/biases (i.e. regularisation factors). The prior on these hyperparameters is in the form of a Gamma distribution on the precision of the prior distribution (1 / variance). The likelihood variance has a hyperprior assigned to it in the same way. For single prior hyperparameter granularity and the likelihood hyperparameter, the gamma prior has hyperparameters a = 1, b = 1. For layer and input_size granularities on the stochastic prior hyperparameters, the first hidden layer weights and all biases have Gamma priors parameterised by a = 1, b = 1. The other layer weights have a Gamma prior with a = 1, b = 1 / number of nodes in previous layer. 
 
-- EXPLAIN PC RUNS
+- The PolyChord algorithm was run with 1000 livepoints and n_repeats set to 5 * the dimensionality of the parameter space.
+
+## results
+
+- For a given BNN, there is no correlation between Z and test loss over different data (randomisations).
+
+
 
 # other stuff
 
