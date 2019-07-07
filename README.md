@@ -58,7 +58,19 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - For a given BNN, there is no correlation between Z and test loss over different data (randomisations).
 
+- Looking at non-stochastic hyperparameter runs and a given activation, no trend between evidence and test set performance was seen over different sized neural networks. However, surprisingly, ReLU activation consistently performs better than tanh (with no stochastic hyperparameters, ReLU activation with stochastic hyperparams were not tested) over all networks in terms of test set performance. This is also reflected in the higher associated evidence values
 
+- With the single stochastic hyperparameter networks, start to see a (negative) correlation between Bayesian evidence and test set performance. Also, start to see a remarkable symmetry between the log evidence as a function of nn dimensionality and the test set performance as a function of the same parameter. Also, start to see a peak in the Bayesian evidence, which is fast to increase (with nn dimension), but relatively slow to decline. This is a well-known trend in model selection. The corresponding dip in test set performance is less well-pronounced, but still arguably there (or alternatively, could be interpreted as a plateau).
+
+- For the layer stochastic hyperparameter networks, more of a correlation between test set performance and Bayesian evidence is present. Similar to the single stochastic hyperparameter case, the ln(Z)-nn_dim and test set performance-nn_dim symmetry also appears. The correspoding peaks and troughs are also there, but are less clear-cut (more plateau-like).
+
+- Although, surprisingly, the input_size stochastic hyperparameter networks consistently don't perform as well as the layer systems (of the same network size). Since this system is more granular than the layer systems, it should be able to perform at least as well as it. Thus, one can only attribute this to the (more) complex parameter space not being explored as well, or, the system overfitting to the training data. Nevertheless, the input_size results show a good correlation between test performance and evidence, a strong symmetry in evidence and test performance (see points above), and arguably, the most well-formed peaks/troughs in the same graphs.
+
+- Looking at all the stochastic hyperparameter systems, the correlation and symmetries remain, but the peaks/troughs are much less apparent (more of a plateau).
+
+- Now turning attention to all the 2-node architectures, the correlation still exists, with clear modes corresponding to tanh no stochastic hyperparams, ReLU no stochastic hyperparams, and the tanh stochastic hyperparam systems. The symmetries are still present, but the peaks/troughs/plateaus (if they exist) are convoluted. 4- and 8-node architectures show similar stories.
+
+- Looking at systems grouped together by how many hidden layers they contain (1, 2, 3 or 4), the correlations exist, but there seems to be mainly two modes of separation: non-stochastic hyperparams vs stochastic hyperparams. For one layer, all but the (8) systems show good peaks/troughs. Similar can be said for the 2, 3, and 4 layer systems, but the peak/trough relation is weaker.
 
 # other stuff
 
