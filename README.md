@@ -52,9 +52,15 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - Note for non-stochastic hyperparameter systems, likelihood variance is fixed to unity, all priors are zero mean Gaussians with unit variance. For stochastic hyperparameter systems, the prior hyperparameters control variance of priors of NN weights/biases (i.e. regularisation factors). The prior on these hyperparameters is in the form of a Gamma distribution on the precision of the prior distribution (1 / variance). The likelihood variance has a hyperprior assigned to it in the same way. For single prior hyperparameter granularity and the likelihood hyperparameter, the gamma prior has hyperparameters a = 1, b = 1. For layer and input_size granularities on the stochastic prior hyperparameters, the first hidden layer weights and all biases have Gamma priors parameterised by a = 1, b = 1. The other layer weights have a Gamma prior with a = 1, b = 1 / number of nodes in previous layer. 
 
+- For combined runs, combine various different BNNs which were trained independently, using a uniform prior over the categorical variables describing these combinations, and also weighted by their relative Z values. Could have trained these networks in one run, treating categorical variable as sampling parameter (and arrive at the same result, theoretically). However, it seemed natural to treat the discrete categorical parameters as partitions for the individual runs, to better manage computational resources.
+
+- Looked at combining different architectures with same activations (and thus different sizes and stochastic hyperparams), same stochastic hyperparams (and thus different sizes), and similar sizes in some sense (e.g. number of nodes per layer, or number of layers, and thus different stochastic hyperparams), as well as combinations of these combined networks (their supersets).
+
 - The PolyChord algorithm was run with 1000 livepoints and n_repeats set to 5 * the dimensionality of the parameter space.
 
 ## results
+
+- Overall looking at the (averaged) full results of Z vs test loss there are three modes apparent, corresponding to no stochastic hyperparameter tanh activation bnns, no stochastic hyperparameter ReLU activation bnns, and stochastic hyperparameter tanh activation bnns.
 
 - For a given BNN, there is no correlation between Z and test loss over different data (randomisations).
 
@@ -71,6 +77,10 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - Now turning attention to all the 2-node architectures, the correlation still exists, with clear modes corresponding to tanh no stochastic hyperparams, ReLU no stochastic hyperparams, and the tanh stochastic hyperparam systems. The symmetries are still present, but the peaks/troughs/plateaus (if they exist) are convoluted. 4- and 8-node architectures show similar stories.
 
 - Looking at systems grouped together by how many hidden layers they contain (1, 2, 3 or 4), the correlations exist, but there seems to be mainly two modes of separation: non-stochastic hyperparams vs stochastic hyperparams. For one layer, all but the (8) systems show good peaks/troughs. Similar can be said for the 2, 3, and 4 layer systems, but the peak/trough relation is weaker.
+
+- For the combined network results, overall data shows same three modes as individual runs
+
+- For all of the combinations considered, Z-test set performance trends were very similar to the results of the networks which these combined runs comprised of. Combined log evidences often laid in middle of values which individual ones had (makes sense of course). Test set performance was also very similar on average. Note however the lowest test loss was a combined run (all networks combined), but the average test loss of the combined networks was higher than the individual runs. Latter may be due to a lot of models having significantly larger evidences than others, making such a model averaging (by Z) strongly dependent on these particular models. 
 
 # other stuff
 
