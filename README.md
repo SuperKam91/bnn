@@ -42,7 +42,7 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function.
 - On that note, could look at traditional performance using hierarchical Bayes on stochastic var and prior hyperparams as I don’t think this has ever been done before. However, don’t think I will do this
 
-## nn runs
+## methods
 
 - The aim of Bayesian neural networks is to consider the whole space of networks modelled probability by the posterior distribution on the network parameters, conditioned on the training data. With this posterior distribution, one can make predictions of the outputs of the network, and quantify the model certainty on these estimates. 
 
