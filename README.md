@@ -44,9 +44,15 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 ## nn runs
 
+- The aim of Bayesian neural networks is to consider the whole space of networks modelled probability by the posterior distribution on the network parameters, conditioned on the training data. With this posterior distribution, one can make predictions of the outputs of the network, and quantify the model certainty on these estimates. 
+
+- The predictions from a BNN are often calculated by marginalising over the network parameters, rather than just using their single maximum likelihood/posterior point, as is done in traditional methods.
+
+- While in traditional regression NN training, the average squared loss is commonly chosen as the objective function to minimise (plus some regularisation on the network parameters), in the Bayesian framework, a Gaussian distribution is commonly used to describe the likelihood of the data, given the network parameters, and the priors on these network parameters are also often chose to be Gaussians. Furthermore one can use hierarchical Bayes to treat the likelihood and prior variances as random variables (regularisation factors in traditional methods). In the work here, this is referred to as the stochastic hyperparameter approach (see below). Note this method is by no means new in the context of BNNs, despite the fact that it is seldom used in traditional NN training methods.
+
 - Various architectures and setups are trained to see how the test set error correlates with the Bayesian evidence. For each setup, a BNN is trained on 10 different randomisations of the train/test set split, each of which gives a value for the test set error and Bayesian evidence (and their errors). The total size of the BH dataset is 506, with 13 inputs and one output. a 50-50 split was used for the training and test data.
 
-- The following architectures were considered: (2), (4), (8), (2,2), (4,4), (2,2,2), (4,4,4), (2,2,2,2), (4,4,4,4).
+- The following architectures were considered: (0), (2), (4), (8), (2,2), (4,4), (2,2,2), (4,4,4), (2,2,2,2), (4,4,4,4).
 
 - For each architecture, the following nn types were considered: tanh activation no stochastic hyperparameters (fixed variances on likelihoods/priors), relu activation no stochastic hyperparameters, tanh activation single stochastic prior hyperparameter (one hyperparameter for variance of all priors), tanh activation layer prior hyperparameters (one hyperparameter for weights in each hidden/output layer, one hyperparameter for biases in each hidden/output layer), tanh activation input_size stochastic prior hyperparameters (for given layer, one hyperparameter for each input to that layer, which is shared among all weights in the layer multiplying that same input. Also one hyperparameter for biases per hidden/output layer). For all stochastic hyperparameter runs one hyperparameter is used for the variance of the likelihood.
 
@@ -81,6 +87,8 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 - For the combined network results, overall data shows same three modes as individual runs
 
 - For all of the combinations considered, Z-test set performance trends were very similar to the results of the networks which these combined runs comprised of. Combined log evidences often laid in middle of values which individual ones had (makes sense of course). Test set performance was also very similar on average. Note however the lowest test loss was a combined run (all networks combined), but the average test loss of the combined networks was higher than the individual runs. Latter may be due to a lot of models having significantly larger evidences than others, making such a model averaging (by Z) strongly dependent on these particular models. 
+
+- Also trained same network sizes (with tanh activations) using traditional methods in the most basic way (no regularisation, no hyperparameter tuning), with 1000 epochs on the same train/test data splits. 6 of the  MLE test set estimates estimates were inferior to the no stochastic hyperparameter BNN estimates, while 4 were superior. All 10 BNNs performed better than their MLE equivalents when stochastic hyperparameters were used. 
 
 # other stuff
 
