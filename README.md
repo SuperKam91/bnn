@@ -196,7 +196,7 @@ https://stats.stackexchange.com/questions/222883/why-are-neural-networks-becomin
 https://www.quora.com/Why-are-neural-networks-becoming-deeper-more-layers-but-not-wider-more-nodes-per-layer;
 https://stats.stackexchange.com/questions/214360/what-are-the-effects-of-depth-and-width-in-deep-neural-networks;
 https://stats.stackexchange.com/questions/182734/what-is-the-difference-between-a-neural-network-and-a-deep-neural-network-and-w;
-basic idea is that wider networks develop more lower level features/ ones 'similar' to inputs, while deeper networks calculate more complex features more abstract from the inputs. Arguments for depth are that more complex functions of the input can be learned and thus the same 'predictive power' may be obtained with fewer nodes, and more abstract features may generalise to out-of-sample data better. Arguments for width are that it is more computationally efficient as more calculations can be done in parallel, less problems with numerical instabilities such as vanishing and exploding gradients.
+basic idea is that wider networks develop more lower level features (less likely to overfit)/ ones 'similar' to inputs, while deeper networks calculate more complex features more abstract from the inputs. Arguments for depth are that more complex functions of the input can be learned and thus the same 'predictive power' may be obtained with fewer nodes, and more abstract features an be learned, which give an insight into how the network learns. Arguments for width are that it is more computationally efficient as more calculations can be done in parallel, less problems with numerical instabilities such as vanishing and exploding gradients.
 Papers on the topic:
 https://arxiv.org/abs/1312.6184;
 https://arxiv.org/abs/1512.03385;
