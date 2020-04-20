@@ -1,6 +1,0 @@
-- links to pages with suggestions on how to calculate the Bayesian evidence using Monte Carlo methods:
-https://stats.stackexchange.com/questions/60172/robust-mcmc-estimator-of-marginal-likelihood
-https://stats.stackexchange.com/questions/209810/computation-of-the-marginal-likelihood-from-mcmc-samples
-seems there is no consensus on method to use, but nested sampling is suggested (but is rumoured to be inefficient).
-- Xi'an blog post commenting on Heaven's paper on evidence estimation using MCMC techniques. Slates the paper, but provides interesting references:
-https://xianblog.wordpress.com/2017/04/26/marginal-likelihoods-from-mcmc/
