@@ -5,7 +5,17 @@ Qualitative document giving an overview of BNNs and what is included in our impl
 https://www.overleaf.com/project/5e9d5c60965f93000172a8e5
 
 Currently runs with PolyChordLite version 1.15. e.g. checkout 316effd815b2da5bafa66cfd0388a7c601eaa21d
-  
+
+# Repo guide
+
+The data used in our BNN experiments (in particular the training/test splits) can be found in the `data` repo.
+
+The code which implements our BNNs can be found in the `forward_models` directory. The `Python` implementations of the BNNs (`NumPy`, `Keras`, and `TensorFlow` versions are available) are in the `python_models` directory. The `C++` implementation is in the `cpp_models` directory.
+
+# User guide
+
+Note we do not currently have a user guide, but the code is well documented. If you are interested in learning more about running the code, please don't hesitate to send me an email at: `kj316@cam.ac.uk`.
+
 # Interesting datasets
 - Kaggle: https://www.kaggle.com/
 - driven data (similar to kaggle): https://www.drivendata.org/competitions/
