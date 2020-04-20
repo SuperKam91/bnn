@@ -1,9 +1,0 @@
-- diagram of relationship between random variables:
-https://www.johndcook.com/blog/distribution_chart/
-
-- algebra of function of several random variables:
-https://math.stackexchange.com/questions/1416/algebra-of-random-variables
-https://math.stackexchange.com/questions/2013/how-to-work-with-operations-algebra-of-random-variables
-
-- algebra of function of one or more random variables:
-http://www.maths.qmul.ac.uk/~pettit/MTH5122/chapter2.pdf
