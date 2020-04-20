@@ -2,7 +2,7 @@
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
 Qualitative document giving an overview of BNNs and what is included in our implementation:
-https://www.overleaf.com/project/5e9d5c60965f93000172a8e5
+`docs/BNN_overview.pdf`
 
 Currently runs with PolyChordLite version 1.15. e.g. checkout 316effd815b2da5bafa66cfd0388a7c601eaa21d
 
