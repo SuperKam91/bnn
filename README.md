@@ -1,58 +1,18 @@
 # bnn
 Training Bayesian neural networks using Markov chain Monte Carlo techniques.
 
-Qualitative document giving an overview of BNNs, the features of this package, and the BH paper:
-https://www.overleaf.com/5218885132gxxndzvrfhfn
+Qualitative document giving an overview of BNNs and what is included in our implementation:
+https://www.overleaf.com/project/5e9d5c60965f93000172a8e5
 
 Currently runs with PolyChordLite version 1.15. e.g. checkout 316effd815b2da5bafa66cfd0388a7c601eaa21d
   
 # Interesting datasets
-- gresearch financial forecasting challenge: https://financialforecasting.gresearch.co.uk/
 - Kaggle: https://www.kaggle.com/
 - driven data (similar to kaggle): https://www.drivendata.org/competitions/
 - innocentive (ditto): https://www.innocentive.com/
 - tunedit (ditto): http://tunedit.org/challenges/
 - openml (ditto): www.openml.org
 - UCI database of datasets, includes counts of number of records and number of features, as well as papers which cite the datasets: https://archive.ics.uci.edu/ml/datasets.html?sort=nameUp&view=list
-
-
-# anyvision stuff
-
-- Bayesian GANs have been shown to give superior performance due to their tendency not to get stuck in local optima, which occurs in GAN training when the generative model finds an 'easy' solution which fools the discriminator.
-
-- ResNets with one neuron per layer have been shown to satisfy their own universal approximation theorem, meaning they can approximate a function (with certain restrictions) to an arbitrary level of precision, as the length of the network approaches infinity. Since it is of Resnet architecture, each layer should be the same size dimension as the input layer. 
-
-However looking at the Wikipedia example (a_2 = g(z_1 + a_0)), this can arise in two ways. if a_0 has size 1 x n, a_1 can be forced to have the same size if a_1 = w_1 * a_0 + b_1 with w_1 having size 1 x 1, or it can be given by a_1 = a_0 * w_1 + b_1 with w_1 having size n x n. Thus odd indexed layers have dimensionality 1 + n or n * n + n and the even layers have no learned parameters.
-
-In the universal approximation paper, the architecture and dimensions seem somewhat different, and describes it in terms of 'blocks'. It appears that a_2 is given by a_2 = w_2 * g(a_0 * w_1 + b_1) + a_0 with w_1 having size n x 1 and w_2 1 x n. It is interesting that the second layer doesn't have a bias, or an activation. I assume the output of each block is used as the input to the next. With this architecture each block corresponds to a one neuron layer followed by an n-wide layer. Thus each block has 2*n + 1 parameters, n + 1 for the first layer, and n for the second.
-
-The coursera version is the same as the universal approximation paper, but the second layer of each block contains a bias and an activation over the whole input, i.e. a_2 = g(w_2 * g(a_0 * w_1 + b_1) + b_2 + a_0). Thus each block has 3*n + 1 parameters, n + 1 for the first layer, and 2n for the second (n for the weights and n for the biases).
-
- I believe this is the exact version introduced in the original ResNet paper. The final layer is a linear (potentially multi-neuron) layer. 
-In paper, ResNet does better than wider NN for simple example (both are tested up to 5 layers).
-
-- Look at hyperspherical energy paper
-
-# main work
-
-- Run mlp bnns first with no stochastics, then with different granularities of prior and stochastic var. At each stage, repeat for different sized nns. Idea is to see if evidence is correlated with test set performance as the nns change in their complexity. NOTE FOR RUNS BH_50_R_MLP_2, BH_50_R_MLP_4, AND BH_50_R_MLP_8, THINK I ACCIDENTALLY PUT SORTED GAUSSIAN PRIOR ON OUTPUT LAYER INTERCEPT INSTEAD OF VANILLA GAUSSIAN. SHOULDN'T HAVE ANY EFFECT AS DEGEN DEPENDENCE LENGTH IS 1.
-- Can then piece together these runs to see how evidence/predictions change as a function of the hyperparameters dictating the neural network size, and activation type. Nice divide here as these are discrete hyperparameters.
-- Will be good to see how test performance varies as a function of these things. May be good to also compare with traditional equivalents, where they use randomised search/Bayes optimisation to select model hyperparams. However, getting same granularity on hyperparameters will be very difficult in some cases (e.g. input_size granularity on stochastic prior hyperparams). 
-- Also want to take advantage of polychord’s no derivatives requirement. May be the case that nns which are usually associated with numerical difficulties (e.g. very deep nns or ones with more complex activations) actually perform very well when trained with PolyChord, as these issues are no longer relevant.
-- Furthermore, not needing derivatives is relevant for the training some of the stochastic hyperparams (number of layers, nodes, activation types). As with these params, even using hierarchical Bayes one cannot minimise the objective function.
-- On that note, could look at traditional performance using hierarchical Bayes on stochastic var and prior hyperparams as I don’t think this has ever been done before. However, don’t think I will do this
-
-## other stuff
-
-- Think of L0 regularisation in terms of a prior.
-- See how 'infinitely' long ResNets perform c.f. universal approximation using ResNets paper.
-- Maybe also think about how at least some parts of the training can be done traditionally (via optimisation) and as a bonus, how one can obtain uncertainty and evidence estimates from this subspace by using the Hessian.
-- Look at typical dimensionality of sequential/recurrent nns.
-- Consider looking at Edward results (google's Bayesian nn package which uses variational inference approach) and compare with Polychord.
-
-# discarded stuff
-
-- Will forget about FIFA dataset runs for now, and concentrate on Boston housing
 
 # summaries of other large scale works on bnns
 
@@ -92,9 +52,9 @@ In paper, ResNet does better than wider NN for simple example (both are tested u
 
 - Gal finds that this method exceeds traditional variational inference methods both in terms of speed and test set performance for most tasks, with the only doubts occurring in some CNNs. He also finds it outperforms traditional methods in terms of test set performance, with the added bonus that one gets an uncertainty estimate. The method however cannot give evidence estimates.
 
-# background reading
+# background reading on BNNs
 
-- Theses which focus on bnns and their applications, to draw inspiration from: http://mlg.eng.cam.ac.uk/yarin/blog_2248.html#thesis (Gal, 2016), www.cs.ubc.ca/~nando/papers/thesis.pdf (Freitas, 1999), http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.446.9306&rep=rep1&type=pdf (Neal, 1995), http://www.inference.org.uk/mackay/PhD.html (Mackay, 1991) 
+- theses which focus on bnns and their applications, to draw inspiration from: http://mlg.eng.cam.ac.uk/yarin/blog_2248.html#thesis (Gal, 2016), www.cs.ubc.ca/~nando/papers/thesis.pdf (Freitas, 1999), http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.446.9306&rep=rep1&type=pdf (Neal, 1995), http://www.inference.org.uk/mackay/PhD.html (Mackay, 1991) 
 
 - bnn workshop @ nips. Contains extended abstracts and videos to some of workshops:
 http://bayesiandeeplearning.org/
@@ -140,65 +100,3 @@ https://arxiv.org/pdf/1512.05287.pdf (2016),
 https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf (2011)
 
 - papers on restricted Boltzmann machines: www-etud.iro.umontreal.ca/~boulanni/ICML2012.pdf, https://www.cs.toronto.edu/~rsalakhu/papers/rbmcf.pdf
-
-# thoughts scratchpad
-
-- For the runs with stochastic hyperparameters I have made a bit of an adaption. According to Neal, the biases should never be scaled (unlike the weights). Thus for the layer and input_size granularity cases, the biases are given their own hyperpriors. For consistency I also give the biases in the first hidden layer their own separate hyperpriors (as sharing them with weights in first layer doesn't seem fair, if in other layers, where biases aren't scaled but weights are, they get their own separate hyperprior).
-
-- Posts on width vs length of neural networks: 
-https://stats.stackexchange.com/questions/222883/why-are-neural-networks-becoming-deeper-but-not-wider;
-https://www.quora.com/Why-are-neural-networks-becoming-deeper-more-layers-but-not-wider-more-nodes-per-layer;
-https://stats.stackexchange.com/questions/214360/what-are-the-effects-of-depth-and-width-in-deep-neural-networks;
-https://stats.stackexchange.com/questions/182734/what-is-the-difference-between-a-neural-network-and-a-deep-neural-network-and-w;
-basic idea is that wider networks develop more lower level features (less likely to overfit)/ ones 'similar' to inputs, while deeper networks calculate more complex features more abstract from the inputs. Arguments for depth are that more complex functions of the input can be learned and thus the same 'predictive power' may be obtained with fewer nodes, and more abstract features an be learned, which give an insight into how the network learns. Arguments for width are that it is more computationally efficient as more calculations can be done in parallel, less problems with numerical instabilities such as vanishing and exploding gradients.
-Papers on the topic:
-https://arxiv.org/abs/1312.6184;
-https://arxiv.org/abs/1512.03385;
-https://arxiv.org/pdf/1605.07146.pdf
-
-- Look at number of constrained dimensions by calculating from likelihood values in chains (c.f. Will's new paper).
-
-- Calculate likelihood value associated with traditional training (Keras) weights. Will be interesting to see how these compare with likelihood values of nested sampling
-
-- L0 norm is a much desired regularisation type in traditional methods, but is difficult to compute. Wonder what prior this corresponds to.
-
-- As these models become increasingly complex as we let the data decide more hyperparameters (prior variance, likelihood variance, number of layers, number of neurons per layer, type of activation functions, network parameters), may be worth training some of these (i.e. the differentiable ones) using traditional (optimisation) methods. One can still get a measure of uncertainty and an estimate of the evidence on this subspace by looking at the Hessian.
-
-- Likewise neural network size can be either judged by evidence (and see if it correlates with test set error), or chosen by data (by treating as a stochastic hyperparameter) and marginalised over.
-
-- Activation functions can be treated as a stochastic parameter: assign a categorical variable to the type used. Then can marginalise over this variable when making prediction, so we are essentially considering an ensemble of networks (with different activations and weights) to make the prediction. Also look at evidence/test error (and compare with models where activation isn't varied), see if switching activations worth it.
-
-- Same can be said with network size, as different architectures can lead to different numerical instabilities in the gradients.
-
-- Would be interesting to see if bnns show activation which fits the data particularly well (by looking at evidence / test error), where gradients aren't important.
-
-- n.b. in Neal, scaling of hyperprior params (by number of units in that layer) is only applicable to hidden layers, and in particular, not to the biases.
-
-- Look at success of global average pooling layers (GAP). Premise is for an input layer of size (num_batches, height, width, depth), take average value over height and width to return a tensor with shape (num_batches, 1, 1, depth). Useful for e.g. drastically reducing size of any subsequent fully connected layers. See:
-https://alexisbcook.github.io/2017/global-average-pooling-layers-for-object-localization/
-
-- Transfer learning is a potential opportunity: train all but final layer using MLE methods (or use pre-trained weights) to e.g. learn featuring generating nodes. Train final layer(s) with BNN to learn accurate representation of non-linear combination of these learned features, and some uncertainty. Problem is, previous layers cannot be too big, or even training the final layers will not be possible. Unfortunately this will often be the case with CNNs, as the number of channels usually increases with depth into the NN (as the CNN learns a larger number of intricate features as one delves into the NN).
-
-- An alternative to the above is using MLE/MPE methods to train an (variational) autoencoder to reduce the dimensions of the input, and then feed this to a BNN. Downside of this is you will lose some information in the encoding of the input, which may outweight the gains of treating the problem in a Bayesian framework
-
-- Seems that there are applications in ML in areas such as medicine, where number of training data is small. Thus one is forced to use small networks to prevent overfitting. See bullet below.
-
-- https://reader.elsevier.com/reader/sd/pii/S0933365716301749?token=D3ADCF7EC51CE6EBC44A540012EAAFB1F5D8CFC8BA12B847B380A83E838D1F4444E61168F6FA06D9F43A5D794D04504D describes a regression problem with five input features and 35 records. Use a one layer NN (~40 parameters), but train over 20000 NNs (with different parameter initialisations, and different randomisations of data for stochastic gradient descent), and pick NN with best performance on cross-validation set, for their final evaluation. Use RMSE and R^2 regression coefficient to evaluate performance, and get values RMSE = 0.85 and R^2 = 0.983 for final evaluation. I believe they run the algorithms for ~30 epochs.
-
-- seems BNNs are useful in approximating Q(s,a) function in RL- rather than approximating maximum of Q(s,a) for values of states and actions, better to have a probability distribution over each Q(s,a), so a can be sampled. Sample from each Q(s,a) for a given state, and choose a corresponding to highest Q value. The stochasticity introduced in sampling a supposedly helps the exploration of the algorithm. see: https://www.coursera.org/learn/practical-rl/lecture/okvvc/thompson-sampling
-
-- look into applications of bnns to deep reinforcement learning- believe they are useful as in rl aren't always looking for optimal value function approximation, having stochastic output helps with exploration of algorithm.
-
-- for pure nn applications (i.e. regression and classification) in general if a lot of data is available, can build an almost arbitrarily large network these days (thanks to gpus) to perform well, regardless of the complexity of the task. Thus we might want to focus on examples where data is scarce. In these cases, building complex neural networks could lead to overfitting, thus simple networks which perform well (hopefully bnn) should be optimal
-
-- I also suspect that bnns are more useful for regression than classification. In the latter case, MLE/MPE already gives a probability for each class output, thus a bnn is just giving a 'probability distribution of probabilities', which in isolation isn't very satisfying (though the statistics one can calculate from these distributions are still interesting). On the other hand in regression, having a probability distribution over some output variable will almost always be useful
-
-- will probably need to ignore all explicit regularisation techniques (i.e l^n norm regularisation) as polychord handles prior separately from likelihood/cost function. OR could handle prior in cost function using regularisation, then assign uniform priors in polychord
-
-- distributed tf uses master & slave and mapreduce paradigms. need to see if we can use distributed tf on cambridge hpc
-
-- tf and keras can use gpus almost automatically. very little intervention needed. need to see if we can use tf-gpu on cambridge hpc gpu systems
-
-- need to think how batches will be handled with polychord (opposed to passing all data at once)
-
-- one idea is to use tf/keras optimisation a little bit to get a good 'initial guess' of the network parameters. pass these to polychord and it can use these as the initial livepoints. note however these initial livepoints would have to be independent. subsequent samples will be at likelihoods higher than the initial set, and so should be able to concentrate on sampling the peak of the posterior. avoids wasting time sampling 'unreasonable' network parameters. another problem with this is the initial livepoints aren't sampled according to the prior, unless we implement the prior (regularise) in the optimisation exploration (then can include prior in ll func to pc with uniform priors or treat priors separately as normal)
