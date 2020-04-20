@@ -10,7 +10,7 @@ Currently runs with PolyChordLite version 1.15. e.g. checkout 316effd815b2da5baf
 
 The data used in our BNN experiments (in particular the training/test splits) can be found in the `data` repo.
 
-The code which implements our BNNs can be found in the `forward_models` directory. The `Python` implementations of the BNNs (`NumPy`, `Keras`, and `TensorFlow` versions are available) are in the `python_models` directory. The `C++` implementation is in the `cpp_models` directory.
+The code which implements our BNNs can be found in the `forward_models` directory. The `Python` implementations of the BNNs (`NumPy`, `Keras`, and `TensorFlow` versions are available) are in the `forward_models/python_models` directory. The `C++` implementation is in the `forward_models/cpp_models` directory. The `MPE_examples` directory gives some basic examples of traditionally trained neural networks, implemented in `Keras` and `TensorFlow`.
 
 # User guide
 
