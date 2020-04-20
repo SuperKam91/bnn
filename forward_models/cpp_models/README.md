@@ -1,6 +1,7 @@
 C++ BNN implementation
 ======================
 
+* Requires [polychord](https://github.com/PolyChord/PolyChordLite)
 * Headers for in-house software are in `./include`, and should be appended `.hpp`
 * Sources are in `./src`, and should be appended `.cpp`
 * The [Eigen](http://eigen.tuxfamily.org/dox/) and [Catch2](https://github.com/catchorg/Catch2) header-only libraries are included in `./external/Eigen and .external/Catch2`
